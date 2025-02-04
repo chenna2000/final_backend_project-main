@@ -227,10 +227,10 @@ class Verify_view(View):
 
             data = json.loads(request.body.decode('utf-8'))
             form = VerifyForm(data)
-            print(data);
+            # print(data)
 
             stored_email = request.session.get('email')
-            print(stored_email)
+            # print(stored_email)
             # user = new_user.objects.filter(email=stored_email).first()
 
             # if not user:
