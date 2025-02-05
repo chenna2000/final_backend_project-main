@@ -1,7 +1,7 @@
 # from django.urls import path
 # from . import views
 
-# urlpatterns = [
+urlpatterns = [
 #     path('start-proctoring-session/', views.StartProctoringSessionView.as_view(), name='start_proctoring_session'),
 #     path('end-proctoring-session/', views.EndProctoringSessionView.as_view(), name='end_proctoring_session'),
 #     path('record-proctoring-event/', views.RecordProctoringEventView.as_view(), name='record_proctoring_event'),
@@ -19,4 +19,4 @@
 #     path('question/next/<int:session_id>/<int:current_question_no>/', views.get_next_question, name='get_next_question'),
 #     path('question/previous/<int:session_id>/<int:current_question_no>/', views.get_previous_question, name='get_previous_question'),
 #     path('submit-details/', views.submit_details, name='submit_details'),
-# ]
+]

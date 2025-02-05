@@ -45,6 +45,7 @@ class new_user(models.Model):
     desired_job_title = models.CharField(max_length=100, blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
+    agreed_to_terms = models.BooleanField(default=True)
 
 
 class Meta:
@@ -59,7 +60,7 @@ class CompanyInCharge(models.Model):
     password = models.CharField(max_length=128,default="null")
     linkedin_profile = models.URLField(blank=True, null=True)
     company_person_name = models.CharField(max_length=255,default="Null")
-    agreed_to_terms = models.BooleanField(default=False)
+    agreed_to_terms = models.BooleanField(default=True)
     token = models.CharField(max_length=255, blank=True, null=True)
     # otp_code = models.CharField(max_length=6, blank=True, null=True)
     # otp_generated_at = models.DateTimeField(blank=True, null=True)
@@ -80,7 +81,7 @@ class UniversityInCharge(models.Model):
     password = models.CharField(max_length=128,default="null")
     linkedin_profile = models.URLField(blank=True, null=True)
     college_person_name = models.CharField(max_length=255,default="Null")
-    agreed_to_terms = models.BooleanField(default=False)
+    agreed_to_terms = models.BooleanField(default=True)
     token = models.CharField(max_length=255, blank=True, null=True)
     # otp_code = models.CharField(max_length=6, blank=True, null=True)
     # otp_generated_at = models.DateTimeField(blank=True, null=True)
@@ -100,7 +101,7 @@ class Consultant(models.Model):
     password = models.CharField(max_length=128,default="null")
     linkedin_profile = models.URLField(blank=True, null=True)
     consultant_person_name = models.CharField(max_length=255,default="Null")
-    agreed_to_terms = models.BooleanField(default=False)
+    agreed_to_terms = models.BooleanField(default=True)
     token = models.CharField(max_length=255, blank=True, null=True)
 
 class Subscriber(models.Model):
@@ -131,7 +132,7 @@ class JobSeeker(models.Model):
     password = models.CharField(max_length=128)
     country_code = models.CharField(max_length=5)
     token = models.CharField(max_length=255, blank=True, null=True)
-    agreed_to_terms = models.BooleanField(default=False)
+    agreed_to_terms = models.BooleanField(default=True)
     # otp_code = models.CharField(max_length=6, blank=True, null=True)
     # otp_generated_at = models.DateTimeField(blank=True, null=True)
 

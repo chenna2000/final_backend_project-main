@@ -1355,8 +1355,8 @@ def fetch_jobs_by_job_seeker_skills(request, job_seeker_id):
             for skill in skills_list:
                 job_queries |= Q(skills__icontains=skill)
 
-            jobs_from_job_model = Job.objects.filter(job_queries).distinct()
-            jobs_from_job1_model = Job1.objects.filter(job_queries).distinct()
+            jobs_from_job_model = Job.objects.filter(job_queries, ~Q(job_status="closed")).distinct()
+            jobs_from_job1_model = Job1.objects.filter(job_queries, ~Q(job_status="closed")).distinct()
 
             combined_jobs = list(jobs_from_job_model) + list(jobs_from_job1_model)
 
@@ -3365,8 +3365,8 @@ def fetch_jobs_by_new_user_skills(request, user_id):
             for skill in skills_list:
                 job_queries |= Q(skills__icontains=skill)
 
-            jobs_from_job_model = Job.objects.filter(job_queries).distinct()
-            jobs_from_job1_model = Job1.objects.filter(job_queries).distinct()
+            jobs_from_job_model = Job.objects.filter(job_queries, ~Q(job_status="closed")).distinct()
+            jobs_from_job1_model = Job1.objects.filter(job_queries, ~Q(job_status="closed")).distinct()
 
             combined_jobs = list(jobs_from_job_model) + list(jobs_from_job1_model)
 
