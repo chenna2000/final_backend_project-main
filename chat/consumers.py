@@ -93,7 +93,7 @@ async def get_attachments_for_message(message):
         ]
     
     except Exception as e:
-        print(f"Error retrieving attachments: {e}")
+        # print(f"Error retrieving attachments: {e}")
         return []
 
 

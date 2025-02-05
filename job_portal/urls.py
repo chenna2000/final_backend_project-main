@@ -101,7 +101,7 @@ urlpatterns = [
     path('apply-college-job/<int:job_id>/<int:university_in_charge_id>/', views.apply_college_job, name='apply-college-job'),
     path('college_status/<str:status_choice>/<int:university_in_charge_id>/', views.college_status, name= "college_status"),
 
-    
+
     ## new
     path('update-company-job/<int:company_in_charge_id>/<int:job_id>/', views.update_company_job, name= "update-company-job"),
     path('update-college-job/<int:university_incharge_id>/<int:job_id>/', views.update_college_job, name= "update-college-job"),
