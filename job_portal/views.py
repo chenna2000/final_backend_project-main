@@ -4406,6 +4406,69 @@ def save_job(request):
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
 
+# @csrf_exempt
+# def save_job(request):
+#     if request.method == 'POST':
+#         try:
+#             auth_header = request.headers.get('Authorization', '')
+#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
+
+#             if not token:
+#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
+
+#             jobseeker = JobSeeker.objects.filter(token=token).first()
+#             if not jobseeker:
+#                 return JsonResponse({'error': 'Invalid token'}, status=404)
+
+#             try:
+#                 data = json.loads(request.body)
+#             except json.JSONDecodeError:
+#                 return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+#             job_id = data.get('job_id')
+
+#             if not job_id:
+#                 return JsonResponse({'error': 'Job_id is required'}, status=400)
+
+#             job = None
+#             job1 = None
+#             original_job_id = None
+
+#             try:
+#                 job = Job.objects.get(unique_job_id_as_int=job_id)
+#                 if job.job_status.lower() == 'closed':
+#                     return JsonResponse({'error': 'Job is closed and cannot be saved'}, status=400)
+#                 original_job_id = job.unique_job_id_as_int
+#             except Job.DoesNotExist:
+#                 job = None
+
+#             if not job:
+#                 try:
+#                     job1 = Job1.objects.get(id=job_id)
+#                     if job1.job_status.lower() == 'closed':
+#                         return JsonResponse({'error': 'Job1 is closed and cannot be saved'}, status=400)
+#                     original_job_id = job1.id
+#                 except Job1.DoesNotExist:
+#                     return JsonResponse({'error': 'Job1 not found'}, status=404)
+
+#             if SavedJob.objects.filter(jobseeker=jobseeker, job=job, job1=job1).exists():
+#                 return JsonResponse({'error': 'Job already saved'}, status=400)
+
+#             saved_job = SavedJob.objects.create(
+#                 jobseeker=jobseeker,
+#                 job=job if job else None,
+#                 job1=job1 if job1 else None,
+#                 original_job_id=original_job_id
+#             )
+
+#             return JsonResponse({'message': 'Job saved successfully', 'saved_job_id': saved_job.id}, status=201)
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
+
 @csrf_exempt
 def unsave_job(request):
     if request.method == 'DELETE':
@@ -4443,6 +4506,64 @@ def unsave_job(request):
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
 
+# @csrf_exempt
+# def fetch_saved_jobs(request, jobseeker_id):
+#     if request.method == 'GET':
+#         try:
+#             auth_header = request.headers.get('Authorization', '')
+#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
+
+#             if not token:
+#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
+
+#             jobseeker = JobSeeker.objects.filter(token=token, id=jobseeker_id).first()
+#             if not jobseeker:
+#                 return JsonResponse({'error': 'Invalid token or JobSeeker not found'}, status=404)
+
+#             saved_jobs = SavedJob.objects.filter(jobseeker=jobseeker).select_related('job', 'job1')
+
+#             if not saved_jobs:
+#                 return JsonResponse({'message': 'No saved jobs found'}, status=200)
+
+#             saved_jobs_data = []
+
+#             for saved_job in saved_jobs:
+#                 job_data = None
+#                 job1_data = None
+
+#                 if saved_job.job:
+#                     job_data = {
+#                         'job_id': saved_job.original_job_id,
+#                         'job_title': saved_job.job.job_title,
+#                         'company': saved_job.job.company.name,
+#                         'location': saved_job.job.location,
+#                         'job_type': saved_job.job.job_type,
+#                         'skills': saved_job.job.skills,
+#                         'job_status': saved_job.job.job_status,
+#                     }
+#                 elif saved_job.job1:
+#                     job1_data = {
+#                         'job1_id': saved_job.job1.id,
+#                         'job_title': saved_job.job1.job_title,
+#                         'university': saved_job.job1.college.college_name,
+#                         'location': saved_job.job1.location,
+#                         'job_type': saved_job.job1.job_type,
+#                         'skills': saved_job.job1.skills,
+#                         'job_status': saved_job.job1.job_status,
+#                     }
+
+#                 if job_data:
+#                     saved_jobs_data.append({'job': job_data})
+#                 elif job1_data:
+#                     saved_jobs_data.append({'job1': job1_data})
+
+#             return JsonResponse({'saved_jobs': saved_jobs_data}, status=200)
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
 @csrf_exempt
 def fetch_saved_jobs(request, jobseeker_id):
     if request.method == 'GET':
@@ -4469,6 +4590,9 @@ def fetch_saved_jobs(request, jobseeker_id):
                 job1_data = None
 
                 if saved_job.job:
+                    if saved_job.job.job_status == 'closed':
+                        continue
+
                     job_data = {
                         'job_id': saved_job.original_job_id,
                         'job_title': saved_job.job.job_title,
@@ -4478,7 +4602,11 @@ def fetch_saved_jobs(request, jobseeker_id):
                         'skills': saved_job.job.skills,
                         'job_status': saved_job.job.job_status,
                     }
+
                 elif saved_job.job1:
+                    if saved_job.job1.job_status == 'closed':
+                        continue
+
                     job1_data = {
                         'job1_id': saved_job.job1.id,
                         'job_title': saved_job.job1.job_title,
@@ -4500,6 +4628,7 @@ def fetch_saved_jobs(request, jobseeker_id):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
 
 @csrf_exempt
 def save_job_new_user(request):
@@ -4557,6 +4686,71 @@ def save_job_new_user(request):
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
 
+# @csrf_exempt
+# def save_job_new_user(request):
+#     if request.method == 'POST':
+#         try:
+#             auth_header = request.headers.get('Authorization', '')
+#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
+
+#             if not token:
+#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
+
+#             data = json.loads(request.body)
+#             new_user_id = data.get('new_user_id')
+#             job_id = data.get('job_id')
+
+#             if not new_user_id or not job_id:
+#                 return JsonResponse({'error': 'New User ID and Job ID are required'}, status=400)
+            
+#             user = new_user.objects.filter(token=token, id=new_user_id).first()
+#             if not user:
+#                 return JsonResponse({'error': 'Invalid token or New User not found'}, status=404)
+
+#             job = None
+#             job1 = None
+#             original_job_id = None
+
+#             try:
+#                 job = Job.objects.get(unique_job_id_as_int=job_id)
+#                 job.refresh_from_db()
+#                 print(f"Job Status from DB: {job.job_status}")
+#                 if job.job_status.lower() == 'closed':
+#                     return JsonResponse({'error': 'Job is closed and cannot be saved'}, status=400)
+#                 original_job_id = job.unique_job_id_as_int
+#             except Job.DoesNotExist:
+#                 job = None
+
+#             if not job:
+#                 try:
+#                     job1 = Job1.objects.get(id=job_id)
+#                     job1.refresh_from_db()
+#                     print(f"Job1 Status from DB: {job1.job_status}")
+#                     if job1.job_status.lower() == 'closed':
+#                         return JsonResponse({'error': 'Job1 is closed and cannot be saved'}, status=400)
+#                     original_job_id = job1.id
+#                 except Job1.DoesNotExist:
+#                     return JsonResponse({'error': 'Job1 not found'}, status=404)
+
+#             if SavedJobForNewUser.objects.filter(new_user=user, job=job, job1=job1).exists():
+#                 return JsonResponse({'error': 'Job already saved for this New User'}, status=400)
+            
+#             saved_job = SavedJobForNewUser.objects.create(
+#                 new_user=user,
+#                 job=job if job else None,
+#                 job1=job1 if job1 else None,
+#                 original_job_id=original_job_id
+#             )
+
+#             return JsonResponse({'message': 'Job saved successfully for New User', 'saved_job_id': saved_job.id}, status=201)
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
+
+
 @csrf_exempt
 def unsave_job_new_user(request):
     if request.method == 'DELETE':
@@ -4594,6 +4788,63 @@ def unsave_job_new_user(request):
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
 
+# @csrf_exempt
+# def fetch_saved_jobs_new_user(request, new_user_id):
+#     if request.method == 'GET':
+#         try:
+#             auth_header = request.headers.get('Authorization', '')
+#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
+
+#             if not token:
+#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
+
+#             user = new_user.objects.filter(token=token, id=new_user_id).first()
+#             if not user:
+#                 return JsonResponse({'error': 'Invalid token or New User not found'}, status=404)
+
+#             saved_jobs = SavedJobForNewUser.objects.filter(new_user=user).select_related('job', 'job1')
+
+#             if not saved_jobs:
+#                 return JsonResponse({'message': 'No saved jobs found for this New User'}, status=200)
+
+#             saved_jobs_data = []
+#             for saved_job in saved_jobs:
+#                 job_data = None
+#                 job1_data = None
+
+#                 if saved_job.job:
+#                     job_data = {
+#                         'job_id': saved_job.original_job_id,
+#                         'job_title': saved_job.job.job_title,
+#                         'company': saved_job.job.company.name,
+#                         'location': saved_job.job.location,
+#                         'job_type': saved_job.job.job_type,
+#                         'skills': saved_job.job.skills,
+#                         'job_status': saved_job.job.job_status,
+#                     }
+#                 elif saved_job.job1:
+#                     job1_data = {
+#                         'job1_id': saved_job.job1.id,
+#                         'job_title': saved_job.job1.job_title,
+#                         'university': saved_job.job1.college.college_name,
+#                         'location': saved_job.job1.location,
+#                         'job_type': saved_job.job1.job_type,
+#                         'skills': saved_job.job1.skills,
+#                         'job_status': saved_job.job1.job_status,
+#                     }
+
+#                 if job_data:
+#                     saved_jobs_data.append({'job': job_data})
+#                 elif job1_data:
+#                     saved_jobs_data.append({'job1': job1_data})
+
+#             return JsonResponse({'saved_jobs': saved_jobs_data}, status=200)
+
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
 @csrf_exempt
 def fetch_saved_jobs_new_user(request, new_user_id):
     if request.method == 'GET':
@@ -4619,6 +4870,9 @@ def fetch_saved_jobs_new_user(request, new_user_id):
                 job1_data = None
 
                 if saved_job.job:
+                    if saved_job.job.job_status == 'closed':
+                        continue
+
                     job_data = {
                         'job_id': saved_job.original_job_id,
                         'job_title': saved_job.job.job_title,
@@ -4629,6 +4883,9 @@ def fetch_saved_jobs_new_user(request, new_user_id):
                         'job_status': saved_job.job.job_status,
                     }
                 elif saved_job.job1:
+                    if saved_job.job1.job_status == 'closed':
+                        continue
+
                     job1_data = {
                         'job1_id': saved_job.job1.id,
                         'job_title': saved_job.job1.job_title,
@@ -4650,6 +4907,7 @@ def fetch_saved_jobs_new_user(request, new_user_id):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
 
 # @csrf_exempt
 # def update_company_job(request, company_in_charge_id, job_id):
