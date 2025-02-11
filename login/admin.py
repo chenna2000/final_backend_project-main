@@ -16,7 +16,7 @@ class CustomUserAdmin(BaseUserAdmin):
             obj.is_subadmin = True
         super().save_model(request, obj, form, change)
 
-
+        
 admin.site.register(CompanyInCharge)
 admin.site.register(Consultant)
 admin.site.register(UniversityInCharge)

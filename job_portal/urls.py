@@ -65,6 +65,7 @@ urlpatterns = [
     path('unsave-job-new-user/', views.unsave_job_new_user, name='unsave_job_new_user'),
     path('fetch-saved-jobs-new-user/<int:new_user_id>/', views.fetch_saved_jobs_new_user, name='fetch_saved_jobs_new_user'),
     path('user-apply-job/<int:job_id>/<int:user_id>/', views.user_apply_for_job, name='user-apply-job'),
+    path('new-user-enquiry/<int:id>/', views.submit_enquiry, name= "submit_enquiry"),
 
     ## extra functionalities
     path('jobs/', views.job_list, name='job_list'),

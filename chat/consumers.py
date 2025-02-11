@@ -118,7 +118,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         self.group_name = f"user_{self.user_email.replace('@', '_at_').replace('.', '_dot_')}"
         # print(f"User {self.user_email} connected to group {self.group_name}")
 
-        # Join the group
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
@@ -132,7 +131,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.handle_send_message(content)
         elif action == "get_messages":
             await self.handle_get_messages(content)
-        elif action == "ping":  # Handle ping from the client
+        elif action == "ping":
             await self.send_json({"action": "pong"})
         else:
             await self.send_json({"error": "Invalid action"})
@@ -148,19 +147,16 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return
 
         try:
-            # Fetch all messages between sender and recipient, ordered by timestamp descending (latest first)
             messages_query = Message.objects.filter(
                 Q(sender_email=sender_email, recipient_email=recipient_email) |
                 Q(sender_email=recipient_email, recipient_email=sender_email)
-            ).order_by("-timestamp")  # Order by timestamp in descending order to get the latest first
+            ).order_by("-timestamp")
 
-            # If 'since_timestamp' is provided, apply it
             if since_timestamp:
                 since_dt = parser.parse(since_timestamp)
                 messages_query = messages_query.filter(timestamp__gt=since_dt)
 
             # print("All Messages => ", messages_query)
-            # Get all the messages (not just the latest one)
             messages = await sync_to_async(list)(messages_query)
 
             # print("Messages => " , messages)
@@ -181,8 +177,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                         "attachments": attachments,
                     })
 
-                # Make sure the latest message is at the last in the data sent to frontend
-                # The messages are already ordered by timestamp descending, so we just send them
                 await self.send_json({
                     "message": "Messages retrieved successfully",
                     "data": message_data,
@@ -255,7 +249,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 },
             )
 
-            # Notify recipient
             notification_group = f"notifications_{recipient_email.replace('@', '_at_').replace('.', '_dot_')}"
             await self.channel_layer.group_send(
                 notification_group,
@@ -292,13 +285,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         raise ObjectDoesNotExist("Invalid email or token")
 
 
-
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.token = self.scope['url_route']['kwargs']['token']
         self.group_name = f"notifications_{self.token}"
 
-        # Join the group
         await self.channel_layer.group_add(
             self.group_name,
             self.channel_name,
@@ -319,11 +310,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
 class NotificationMessageConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        # Use the recipient's email from the URL route kwargs
         self.recipient_email = self.scope['url_route']['kwargs']['email']
         self.group_name = f"notifications_{self.recipient_email.replace('@', '_at_').replace('.', '_dot_')}"
 
-        # Join the notification group
         await self.channel_layer.group_add(
             self.group_name,
             self.channel_name,
@@ -332,15 +321,13 @@ class NotificationMessageConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave the notification group
         await self.channel_layer.group_discard(
             self.group_name,
             self.channel_name,
         )
 
     async def send_notification(self, event):
-        # Send notification to the client
         message = event['message']
         await self.send_json({"message": message})
-        
+
 

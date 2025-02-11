@@ -19,7 +19,7 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.email} generated at {self.timestamp}"
-
+    
 class new_user(models.Model):
     USER_TYPE_CHOICES = [
         ('student', 'Student'),

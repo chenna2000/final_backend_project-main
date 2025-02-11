@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt # type: ignore
 from django.utils import timezone # type: ignore
 from django.db.models import Q # type: ignore
 from login.models import CompanyInCharge, JobSeeker, UniversityInCharge, new_user
-from .models import Advertisement, Application, Application1, CollegeAdvertisement, CollegeMembership, CollegeScreeningAnswer, CollegeScreeningQuestion, CompanyScreeningAnswer, CompanyScreeningQuestion, Membership, Candidate1Status_not_eligible, Candidate1Status_rejected, Candidate1Status_selected, Candidate1Status_under_review, CandidateStatus_not_eligible, JobSeeker_Resume, CandidateStatus_rejected, CandidateStatus_selected, CandidateStatus_under_review, College, CollegeEnquiry, Interview, Job, Company, Job1, Resume, SavedJobForNewUser, Student, StudentEnquiry, Visitor, SavedJob
+from .models import Advertisement, Application, Application1, CollegeAdvertisement, CollegeMembership, CollegeScreeningAnswer, CollegeScreeningQuestion, CompanyScreeningAnswer, CompanyScreeningQuestion, Membership, Candidate1Status_not_eligible, Candidate1Status_rejected, Candidate1Status_selected, Candidate1Status_under_review, CandidateStatus_not_eligible, JobSeeker_Resume, CandidateStatus_rejected, CandidateStatus_selected, CandidateStatus_under_review, College, CollegeEnquiry, Interview, Job, Company, Job1, Resume, SavedJobForNewUser, Student, StudentEnquiry, Visitor, SavedJob, new_user_enquiry
 from .forms import AchievementForm, AdvertisementForm, AdvertisementForm1, Application1Form, ApplicationForm,CertificationForm, CollegeForm, CompanyForm, EducationForm, ExperienceForm, Job1Form, JobForm, JobseekerAchievementForm, JobseekerCertificationForm, JobseekerEducationForm, JobseekerExperienceForm, JobseekerObjectiveForm, JobseekerProjectForm, JobseekerPublicationForm, JobseekerReferenceForm, JobseekerResumeForm, MembershipForm, MembershipForm1,  ObjectiveForm, ProjectForm, PublicationForm, ReferenceForm, ResumeForm, StudentForm, VisitorRegistrationForm
 import json, operator
 from datetime import timedelta
@@ -1904,7 +1904,6 @@ def get_user_enquiries(request, user_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
 @csrf_exempt
 def college_status_counts(request, university_in_charge_id):
     auth_header = request.headers.get('Authorization')
@@ -1914,20 +1913,25 @@ def college_status_counts(request, university_in_charge_id):
     token = auth_header.split(' ')[1]
 
     try:
-        university_in_charge = UniversityInCharge.objects.get(id=university_in_charge_id, token=token)
-    except UniversityInCharge.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Invalid token or university in charge not found'}, status=404)
+        university_exists = UniversityInCharge.objects.filter(id=university_in_charge_id, token=token).exists()
 
-    try:
-        enquiry_count = CollegeEnquiry.objects.filter(university_in_charge=university_in_charge).count()
-        job_posted_count = Job1.objects.filter(university_in_charge=university_in_charge).count()
-        total_visitor_count = Visitor.objects.filter(university_in_charge=university_in_charge).count()
-        # shortlisted_count = Application1.objects.filter(job__university_in_charge=university_in_charge, status='shortlisted').count()
-        shortlisted_count = Application1.objects.filter(job__university_in_charge=university_in_charge,  status__in=['selected', 'shortlisted']).count()
+        # If university is found, filter based on it; otherwise, count all
+        university_filter = {'university_in_charge_id': university_in_charge_id} if university_exists else {}
 
-        
+        enquiry_count = CollegeEnquiry.objects.filter(**university_filter).count()
+        job_posted_count = Job1.objects.filter(**university_filter).count()
+        total_visitor_count = Visitor.objects.filter(**university_filter).count()
+        shortlisted_count = Application1.objects.filter(
+            job__university_in_charge_id=university_in_charge_id if university_exists else None,
+            status__in=['selected', 'shortlisted']
+        ).count()
+
+        enquiry_submission_count = new_user_enquiry.objects.filter(
+            clg_id=university_in_charge_id if university_exists else None
+        ).count()
+
         jobs_by_month = (
-            Job1.objects.filter(university_in_charge=university_in_charge)
+            Job1.objects.filter(**university_filter)
             .annotate(month=TruncMonth('published_at'))
             .values('month')
             .annotate(count=Count('id'))
@@ -1935,7 +1939,7 @@ def college_status_counts(request, university_in_charge_id):
         )
 
         enquiries_by_month = (
-            CollegeEnquiry.objects.filter(university_in_charge=university_in_charge)
+            CollegeEnquiry.objects.filter(**university_filter)
             .annotate(month=TruncMonth('created_at'))
             .values('month')
             .annotate(count=Count('id'))
@@ -1943,7 +1947,7 @@ def college_status_counts(request, university_in_charge_id):
         )
 
         visitors_by_month = (
-            Visitor.objects.filter(university_in_charge=university_in_charge)
+            Visitor.objects.filter(**university_filter)
             .annotate(month=TruncMonth('visited_at'))
             .values('month')
             .annotate(count=Count('id'))
@@ -1951,7 +1955,10 @@ def college_status_counts(request, university_in_charge_id):
         )
 
         shortlisted_by_month = (
-            Application1.objects.filter(job__university_in_charge=university_in_charge,  status__in=['selected', 'shortlisted'])
+            Application1.objects.filter(
+                job__university_in_charge_id=university_in_charge_id if university_exists else None,
+                status__in=['selected', 'shortlisted']
+            )
             .annotate(month=TruncMonth('applied_at'))
             .values('month')
             .annotate(count=Count('id'))
@@ -1963,6 +1970,8 @@ def college_status_counts(request, university_in_charge_id):
             'shortlisted_count': shortlisted_count,
             'job_posted_count': job_posted_count,
             'enquiry_count': enquiry_count,
+            'new_user_enquiry_count': enquiry_submission_count,
+            'university_found': university_exists,  # True if valid university, False if unregistered
             'jobs_by_month': {job['month'].strftime('%Y-%m'): job['count'] for job in jobs_by_month},
             'enquiries_by_month': {enquiry['month'].strftime('%Y-%m'): enquiry['count'] for enquiry in enquiries_by_month},
             'visitors_by_month': {visitor['month'].strftime('%Y-%m'): visitor['count'] for visitor in visitors_by_month},
@@ -1973,6 +1982,7 @@ def college_status_counts(request, university_in_charge_id):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 @csrf_exempt
 def create_job_for_college(request, university_incharge_id):
@@ -5350,6 +5360,93 @@ def change_college_job_status(request, university_incharge_id, job_id):
         return JsonResponse({'error': 'Job not found'}, status=404)
 
 
+# @csrf_exempt
+# def submit_enquiry(request, id):
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+#     try:
+#         data = json.loads(request.body)
+#         print(data)
+#         print("College ID =>> ", id)
+
+#         required_fields = ["firstname", "lastname", "email", "country_code", "mobile_number", "course"]
+#         missing_fields = [field for field in required_fields if not data.get(field)]
+        
+#         if missing_fields:
+#             return JsonResponse({'error': 'All fields are required', 'missing_fields': missing_fields}, status=400)
+
+#         email = data['email']
+#         user = new_user.objects.filter(email=email).first()
+
+#         if new_user_enquiry.objects.filter(clg_id=id, email=email).exists():
+#             return JsonResponse({'error': 'An enquiry has already been submitted for this college with this email.'}, status=400)
+
+#         enquiry = new_user_enquiry.objects.create(
+#             first_name=data['firstname'],
+#             last_name=data['lastname'],
+#             email=email,
+#             country_code=data['country_code'],
+#             mobile_number=data['mobile_number'],
+#             course=data['course'],
+#             clg_id=id,
+#             new_user=user 
+#         )
+
+#         return JsonResponse({
+#             'message': 'Enquiry submitted successfully',
+#             'enquiry_id': enquiry.id
+#         }, status=201)
+
+#     except json.JSONDecodeError:
+#         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+#     except IntegrityError:
+#         return JsonResponse({'error': 'Error while saving data. Please try again.'}, status=500)
+#     except Exception as e:
+#         return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+@csrf_exempt
+def submit_enquiry(request, id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+
+        required_fields = {"firstname", "lastname", "email", "country_code", "mobile_number", "course"}
+        missing_fields = [field for field in required_fields if field not in data or not data[field]]
+        if missing_fields:
+            return JsonResponse({'error': 'All fields are required', 'missing_fields': missing_fields}, status=400)
+
+        email = data['email']
+
+        if not UniversityInCharge.objects.filter(id=id).exists():
+            return JsonResponse({'error': 'Invalid college ID'}, status=400)
+
+        if new_user_enquiry.objects.filter(clg_id=id, email=email).exists():
+            return JsonResponse({'error': 'An enquiry has already been submitted for this college with this email.'}, status=400)
+
+        user = new_user.objects.filter(email=email).first()
+
+        enquiry = new_user_enquiry.objects.create(
+            first_name=data['firstname'],
+            last_name=data['lastname'],
+            email=email,
+            country_code=data['country_code'],
+            mobile_number=data['mobile_number'],
+            course=data['course'],
+            clg_id=id,
+            new_user=user
+        )
+
+        return JsonResponse({'message': 'Enquiry submitted successfully', 'enquiry_id': enquiry.id}, status=201)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except IntegrityError:
+        return JsonResponse({'error': 'Error while saving data. Please try again.'}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
 
 
 

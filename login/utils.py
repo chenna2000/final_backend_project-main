@@ -32,8 +32,12 @@ def create_subadmin(username, password):
     user.save()
     return user
 
+# def is_superadmin(user):
+#     return user.is_authenticated and user.is_superuser
+
 def is_superadmin(user):
-    return user.is_authenticated and user.is_superuser
+    return user.is_superuser
+
 
 # def send_data_to_google_sheets(first_name, last_name, email, country_code, phone_number, password, sheetname):
 #     sheet_range = f"{sheetname}!A1"
