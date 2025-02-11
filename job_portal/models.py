@@ -4,25 +4,6 @@ from django.utils import timezone # type: ignore
 from login.models import CompanyInCharge, JobSeeker, UniversityInCharge, new_user
 from django.utils.timezone import now # type: ignore
 
-
-class new_user_enquiry(models.Model):
-    # university_in_charge = models.ForeignKey(UniversityInCharge, on_delete=models.CASCADE,null=True, blank=True)
-    # college = models.ForeignKey(College, on_delete=models.CASCADE,null=True, blank=True)
-    clg_id = models.IntegerField(default=0)
-    new_user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.EmailField()
-    country_code = models.CharField(max_length=3, default='+91')
-    mobile_number = models.CharField(max_length=15)
-    course = models.CharField(max_length=128, default='N/A')
-    status = models.CharField(max_length=20, default='pending')
-    created_at = models.DateTimeField(default=timezone.now)
-
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-
 class Job(models.Model):
     unique_job_id = models.UUIDField(default=uuid.uuid1, unique=True, editable=False)
     unique_job_id_as_int = models.BigIntegerField(unique=True, editable=False, null=True)
@@ -40,7 +21,7 @@ class Job(models.Model):
     workplaceTypes = models.CharField(max_length=50)
     location = models.CharField(max_length=100)
     questions = models.TextField(blank=True, null=True)
-    job_status = models.CharField(max_length=50)
+    job_status = models.CharField(max_length=50, default='active')
     email = models.EmailField(null=False, default="unknown@example.com")
     must_have_qualification = models.BooleanField(default=False)
     filter = models.BooleanField(default=False)
@@ -328,7 +309,7 @@ class Job1(models.Model):
     workplaceTypes = models.CharField(max_length=50)
     location = models.CharField(max_length=100)
     questions = models.TextField(blank=True, null=True)
-    job_status = models.CharField(max_length=50)
+    job_status = models.CharField(max_length=50, default='active')
     email = models.EmailField(null=False, default="unknown@example.com")
     must_have_qualification = models.BooleanField(default=False)
     filter = models.BooleanField(default=False)
@@ -665,3 +646,20 @@ class SavedJobForNewUser(models.Model):
 
     class Meta:
         unique_together = ('new_user', 'job', 'job1')
+
+class new_user_enquiry(models.Model):
+    university_in_charge = models.ForeignKey(UniversityInCharge, on_delete=models.CASCADE, null=True, blank=True)
+    clg_id = models.IntegerField(default=0)
+    new_user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    email = models.EmailField()
+    country_code = models.CharField(max_length=3, default='+91')
+    mobile_number = models.CharField(max_length=15)
+    course = models.CharField(max_length=128, default='N/A')
+    status = models.CharField(max_length=20, default='pending')
+    created_at = models.DateTimeField(default=timezone.now)
+
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"

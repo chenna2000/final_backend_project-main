@@ -65,7 +65,6 @@ urlpatterns = [
     path('unsave-job-new-user/', views.unsave_job_new_user, name='unsave_job_new_user'),
     path('fetch-saved-jobs-new-user/<int:new_user_id>/', views.fetch_saved_jobs_new_user, name='fetch_saved_jobs_new_user'),
     path('user-apply-job/<int:job_id>/<int:user_id>/', views.user_apply_for_job, name='user-apply-job'),
-    path('new-user-enquiry/<int:id>/', views.submit_enquiry, name= "submit_enquiry"),
 
     ## extra functionalities
     path('jobs/', views.job_list, name='job_list'),
@@ -102,11 +101,12 @@ urlpatterns = [
     path('apply-college-job/<int:job_id>/<int:university_in_charge_id>/', views.apply_college_job, name='apply-college-job'),
     path('college_status/<str:status_choice>/<int:university_in_charge_id>/', views.college_status, name= "college_status"),
 
-
+    
     ## new
     path('update-company-job/<int:company_in_charge_id>/<int:job_id>/', views.update_company_job, name= "update-company-job"),
     path('update-college-job/<int:university_incharge_id>/<int:job_id>/', views.update_college_job, name= "update-college-job"),
     path('change-company-job-status/<int:company_in_charge_id>/<int:job_id>/', views.change_company_job_status, name= "change_company_job_status"),
     path('change-college-job-status/<int:university_incharge_id>/<int:job_id>/', views.change_college_job_status, name= "change_college_job_status"),
-
+    path('new-user-enquiry/<int:id>/', views.submit_enquiry, name= "submit_enquiry"),
+ 
  ]
