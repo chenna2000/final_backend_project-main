@@ -12,6 +12,8 @@ class ProctoringSession(models.Model):
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(default=timezone.timedelta(hours=3))
+    is_submitted = models.BooleanField(default=False)
+
     STATUS_CHOICES = [
         ('ongoing', 'ongoing'),
         ('completed', 'completed'),

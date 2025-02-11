@@ -447,8 +447,12 @@ def get_details(request):
             session = get_object_or_404(ProctoringSession, id=session_id, user=user)
             exam = session.exam
 
-            score = fetch_user_score(user, exam.id)
-            print(f"Fetched Score for User {user.id}, Exam {exam.id}: {score}")
+            user_score = UserScore.objects.filter(user=user, exam=exam).first()
+            if user_score:
+                user_score.refresh_from_db()
+            score = user_score.score if user_score else 0
+
+            print(f"Fetched Updated Score for User {user.id}, Exam {exam.id}: {score}")
 
             answered_questions = exam.questions.filter(status="Answered").count()
             not_answered_questions = exam.questions.filter(status="Not Answered").count()
@@ -476,27 +480,6 @@ def get_details(request):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
-
-
-# def fetch_user_score(user, exam_id):
-#     try:
-#         user_score = UserScore.objects.filter(user=user, exam_id=exam_id).first()
-#         return user_score.score if user_score else 0
-#     except UserScore.DoesNotExist:
-#         return 0
-
-def fetch_user_score(user, exam_id):
-    try:
-        user_score = UserScore.objects.filter(user=user, exam_id=exam_id).first()
-        if user_score:
-            print(f"User Score Found: {user_score.score}")
-        else:
-            print(f"No UserScore entry found for User: {user.id}, Exam: {exam_id}")
-        return user_score.score if user_score else 0
-    except UserScore.DoesNotExist:
-        print("UserScore does not exist (unexpected error)")
-        return 0
-
 @csrf_exempt
 @require_POST
 def submit_all_answers(request):
@@ -505,11 +488,11 @@ def submit_all_answers(request):
         token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
 
         if not token:
-            return api_response({'error': 'Token is required'}, status=400)
+            return JsonResponse({'error': 'Token is required'}, status=400)
 
         user = new_user.objects.filter(token=token).first()
         if not user:
-            return api_response({'error': 'Invalid token'}, status=403)
+            return JsonResponse({'error': 'Invalid token'}, status=403)
 
         form = SubmitAllAnswersForm(json.loads(request.body))
         if form.is_valid():
@@ -517,7 +500,11 @@ def submit_all_answers(request):
             answers = form.cleaned_data['answers']
 
             session = get_object_or_404(ProctoringSession, id=session_id, user=user)
-            user_score, created = UserScore.objects.get_or_create(user=user, exam=session.exam)
+
+            if session.is_submitted:
+                return JsonResponse({'error': 'Answers have already been submitted'}, status=400)
+
+            user_score, _ = UserScore.objects.get_or_create(user=user, exam=session.exam)
 
             question_map = {q.question_no: q for q in session.exam.questions.all()}
             current_time = timezone.now()
@@ -535,23 +522,32 @@ def submit_all_answers(request):
                         session=session,
                         defaults={'selected_option': selected_option, 'response_time': current_time}
                     )
-                    if created and selected_option == question.correct_option:
-                        print(f"Correct answer for Question {question_no}, increasing score.")
+
+                    if not created and response.selected_option == question.correct_option and selected_option != question.correct_option:
+                        user_score.score = max(user_score.score - 1, 0)
+
+                    if selected_option == question.correct_option and (created or response.selected_option != selected_option):
                         user_score.score += 1
+
+                    response.selected_option = selected_option
+                    response.response_time = current_time
+                    response.save()
 
                     question.status = 'Answered'
                     question.save()
 
             if user_score.score != initial_score:
                 user_score.save(update_fields=['score'])
-                print(f"Final Updated Score: {user_score.score}")
 
-            return api_response({'success': True, 'message': 'Go to details page'}, status=200)
+            session.is_submitted = True
+            session.save(update_fields=['is_submitted'])
+
+            return JsonResponse({'success': True, 'message': 'Answers submitted successfully'}, status=200)
         else:
-            return api_response({'success': False, 'error': 'Invalid data', 'details': form.errors}, status=400)
-    except Exception as e:
-        return api_response({'success': False, 'error': 'An error occurred while submitting all answers', 'details': str(e)}, status=500)
+            return JsonResponse({'success': False, 'error': 'Invalid data', 'details': form.errors}, status=400)
 
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'An error occurred while submitting all answers', 'details': str(e)}, status=500)
 
 @csrf_exempt
 @require_GET
