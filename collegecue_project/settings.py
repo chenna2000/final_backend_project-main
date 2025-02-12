@@ -234,7 +234,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
-        'user': '1000/day'
+        'user': '20000/day'
     }
 }
 
@@ -257,7 +257,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000'
 ]
 
-# Allow credentials
+
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -278,7 +278,6 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     "x-requested-with",
 ]
-
 
 SILENCED_SYSTEM_CHECKS = ["models.W036"]
 

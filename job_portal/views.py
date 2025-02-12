@@ -1060,7 +1060,7 @@ def user_application_status_counts(request, user_id):
             Application1.objects.filter(user=user, status='rejected').count()
         )
 
-        college_enquiries_count = new_user_enquiry.objects.filter(new_user=user).count()
+        college_enquiries_count = new_user_enquiry.objects.filter(email=email).count()
 
         jobs_applied_by_month = (
             list(Application.objects.filter(user=user)
@@ -1107,7 +1107,7 @@ def user_application_status_counts(request, user_id):
         )
 
         college_enquiries_by_month = (
-            new_user_enquiry.objects.filter(new_user=user)
+            new_user_enquiry.objects.filter(email=email)
             .annotate(month=TruncMonth('created_at'))
             .values('month')
             .annotate(count=Count('id'))
