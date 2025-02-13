@@ -5,7 +5,7 @@ from django.middleware.csrf import get_token # type: ignore
 from django.views.decorators.csrf import csrf_exempt # type: ignore
 from .utils import (send_data_to_google_sheet3,send_data_to_google_sheet4,
 send_data_to_google_sheet2, send_data_to_google_sheet5,send_data_to_google_sheets)
-import secrets,json # type: ignore
+import secrets,json, re # type: ignore
 from .models import CompanyInCharge, Consultant, JobSeeker, UniversityInCharge, new_user
 from django.contrib.auth.hashers import make_password, check_password # type: ignore
 from django.utils.decorators import method_decorator # type: ignore
@@ -227,10 +227,10 @@ class Verify_view(View):
 
             data = json.loads(request.body.decode('utf-8'))
             form = VerifyForm(data)
-            # print(data)
+            print(data);
 
             stored_email = request.session.get('email')
-            # print(stored_email)
+            print(stored_email)
             # user = new_user.objects.filter(email=stored_email).first()
 
             # if not user:
@@ -508,11 +508,17 @@ class RegisterUniversityInChargeView(View):
             data = json.loads(request.body.decode('utf-8'))
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+        
+        university_name = data.get('university_name')
+        formatted_university_name = re.sub(r'[^a-zA-Z0-9]', '', university_name).lower()
+        formatted_university_name1 = formatted_university_name[:30]
+        print(formatted_university_name1)
 
         form = UniversityInChargeForm(data)
         if form.is_valid():
             university = form.save(commit=False)
             university.password = make_password(university.password)
+            university.trimmed_university_name = formatted_university_name1
             university.save()
             send_data_to_google_sheet3(
                 university.university_name,
@@ -594,6 +600,8 @@ class RegisterJobSeekerView(View):
     def post(self, request):
         try:
             data = json.loads(request.body.decode('utf-8'))
+            print(data)
+            print("agreed_to_terms => ", data.get('agreed_to_terms'))
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
 

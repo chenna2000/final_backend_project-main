@@ -19,7 +19,7 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.email} generated at {self.timestamp}"
-    
+
 class new_user(models.Model):
     USER_TYPE_CHOICES = [
         ('student', 'Student'),
@@ -83,6 +83,7 @@ class UniversityInCharge(models.Model):
     college_person_name = models.CharField(max_length=255,default="Null")
     agreed_to_terms = models.BooleanField(default=True)
     token = models.CharField(max_length=255, blank=True, null=True)
+    trimmed_university_name = models.CharField(max_length=255, default='N/A')
     # otp_code = models.CharField(max_length=6, blank=True, null=True)
     # otp_generated_at = models.DateTimeField(blank=True, null=True)
 

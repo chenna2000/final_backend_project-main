@@ -107,6 +107,6 @@ urlpatterns = [
     path('update-college-job/<int:university_incharge_id>/<int:job_id>/', views.update_college_job, name= "update-college-job"),
     path('change-company-job-status/<int:company_in_charge_id>/<int:job_id>/', views.change_company_job_status, name= "change_company_job_status"),
     path('change-college-job-status/<int:university_incharge_id>/<int:job_id>/', views.change_college_job_status, name= "change_college_job_status"),
-    path('new-user-enquiry/<int:id>/', views.submit_enquiry, name= "submit_enquiry"),
+    path('new-user-enquiry/<int:id>/<str:collegeName>/', views.submit_enquiry, name= "submit_enquiry"),
  
  ]

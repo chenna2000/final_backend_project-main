@@ -8,7 +8,7 @@ from django.db.models import Q # type: ignore
 from login.models import CompanyInCharge, JobSeeker, UniversityInCharge, new_user
 from .models import Advertisement, Application, Application1, CollegeAdvertisement, CollegeMembership, CollegeScreeningAnswer, CollegeScreeningQuestion, CompanyScreeningAnswer, CompanyScreeningQuestion, Membership, Candidate1Status_not_eligible, Candidate1Status_rejected, Candidate1Status_selected, Candidate1Status_under_review, CandidateStatus_not_eligible, JobSeeker_Resume, CandidateStatus_rejected, CandidateStatus_selected, CandidateStatus_under_review, College, CollegeEnquiry, Interview, Job, Company, Job1, Resume, SavedJobForNewUser, Student, StudentEnquiry, Visitor, SavedJob, new_user_enquiry
 from .forms import AchievementForm, AdvertisementForm, AdvertisementForm1, Application1Form, ApplicationForm,CertificationForm, CollegeForm, CompanyForm, EducationForm, ExperienceForm, Job1Form, JobForm, JobseekerAchievementForm, JobseekerCertificationForm, JobseekerEducationForm, JobseekerExperienceForm, JobseekerObjectiveForm, JobseekerProjectForm, JobseekerPublicationForm, JobseekerReferenceForm, JobseekerResumeForm, MembershipForm, MembershipForm1,  ObjectiveForm, ProjectForm, PublicationForm, ReferenceForm, ResumeForm, StudentForm, VisitorRegistrationForm
-import json, operator, os
+import json, operator, os, re
 from datetime import timedelta
 from django.utils.decorators import method_decorator # type: ignore
 from django.views import View # type: ignore
@@ -1918,9 +1918,11 @@ def college_status_counts(request, university_in_charge_id):
         university_in_charge = UniversityInCharge.objects.get(id=university_in_charge_id, token=token)
     except UniversityInCharge.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Invalid token or university in charge not found'}, status=404)
+    
+    formatted_college_name= university_in_charge.trimmed_university_name
 
     try:
-        enquiry_count = CollegeEnquiry.objects.filter(university_in_charge=university_in_charge).count()
+        enquiry_count = new_user_enquiry.objects.filter(collegeName=formatted_college_name).count()
         job_posted_count = Job1.objects.filter(university_in_charge=university_in_charge).count()
         total_visitor_count = Visitor.objects.filter(university_in_charge=university_in_charge).count()
         # shortlisted_count = Application1.objects.filter(job__university_in_charge=university_in_charge, status='shortlisted').count()
@@ -5221,7 +5223,7 @@ def change_college_job_status(request, university_incharge_id, job_id):
 
 ## new
 @csrf_exempt
-def submit_enquiry(request, id):
+def submit_enquiry(request, id, collegeName):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -5229,10 +5231,18 @@ def submit_enquiry(request, id):
         data = json.loads(request.body)
         print(data)
         print("College ID =>> ", id)
+        print("College Name =>> ", collegeName)
+        
+        formatted_college_name = re.sub(r'[^a-zA-Z0-9]', '', collegeName).lower()
+        print("formatted_college_name =>> ",formatted_college_name )
+
+        formatted_college_name1 = formatted_college_name[:30]
+        print("formatted_college_name upto 30 character =>> ",formatted_college_name1 )
+        
+        university_incharge = UniversityInCharge.objects.filter(trimmed_university_name=formatted_college_name1).first()
 
         required_fields = ["firstname", "lastname", "email", "country_code", "mobile_number", "course"]
         missing_fields = [field for field in required_fields if not data.get(field)]
-        
         if missing_fields:
             return JsonResponse({'error': 'All fields are required', 'missing_fields': missing_fields}, status=400)
 
@@ -5250,7 +5260,9 @@ def submit_enquiry(request, id):
             mobile_number=data['mobile_number'],
             course=data['course'],
             clg_id=id,
-            new_user=user
+            collegeName = formatted_college_name1,
+            new_user=user,
+            university_in_charge=university_incharge
         )
 
         return JsonResponse({

@@ -650,6 +650,7 @@ class SavedJobForNewUser(models.Model):
 class new_user_enquiry(models.Model):
     university_in_charge = models.ForeignKey(UniversityInCharge, on_delete=models.CASCADE, null=True, blank=True)
     clg_id = models.IntegerField(default=0)
+    collegeName = models.CharField(max_length=50, default='N/A')
     new_user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
