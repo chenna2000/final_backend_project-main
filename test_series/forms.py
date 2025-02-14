@@ -35,5 +35,3 @@ class ExamParticipantForm(forms.ModelForm):
         model = ExamParticipant
         fields = ['name', 'email', 'phone_number']
 
-
-
