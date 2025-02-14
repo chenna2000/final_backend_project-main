@@ -188,7 +188,6 @@ class RecordProctoringEventView(View):
         except Exception as e:
             return JsonResponse({'error': 'An error occurred while recording the event', 'details': str(e)}, status=500)
 
-
 @csrf_exempt
 @require_POST
 def submit_answer(request):
@@ -208,23 +207,31 @@ def submit_answer(request):
             return api_response(success=False, error='Invalid data', status=400)
 
         session_id = form.cleaned_data['session_id']
-        session = get_object_or_404(ProctoringSession.objects.only('id', 'exam'), id=session_id, user=user)
-
         question_no = form.cleaned_data['question_no']
         selected_option = form.cleaned_data['selected_option']
         clear_response = form.cleaned_data['clear_response']
 
-        question = get_object_or_404(Question.objects.only('id', 'status', 'correct_option'), exam=session.exam, question_no=question_no)
+        session = get_object_or_404(
+            ProctoringSession.objects.select_related('exam').only('id', 'exam_id'), 
+            id=session_id, 
+            user=user
+        )
+
+        question = get_object_or_404(
+            Question.objects.only('id', 'status', 'correct_option'), 
+            exam_id=session.exam_id, 
+            question_no=question_no
+        )
 
         user_response = UserResponse.objects.filter(user=user, question=question, session=session).first()
+
         if clear_response:
             if user_response:
                 if user_response.selected_option == question.correct_option:
-                    user_score, _ = UserScore.objects.get_or_create(user=user, exam=session.exam)
+                    user_score, _ = UserScore.objects.get_or_create(user=user, exam_id=session.exam_id)
                     if user_score.score > 0:
                         user_score.score -= 1
                         user_score.save(update_fields=['score'])
-
                 user_response.delete()
             return api_response(success=True, data={'message': 'Response cleared and score updated.'})
 
@@ -240,18 +247,20 @@ def submit_answer(request):
         )
 
         if question.status != 'Answered':
-            question.status = 'Answered'
-            question.save(update_fields=['status'])
+            Question.objects.filter(id=question.id).update(status='Answered')
 
         if selected_option == question.correct_option:
-            user_score, _ = UserScore.objects.get_or_create(user=user, exam=session.exam)
+            user_score, _ = UserScore.objects.get_or_create(user=user, exam_id=session.exam_id)
             user_score.score += 1
             user_score.save(update_fields=['score'])
 
         return api_response(success=True, data={'message': 'Answer submitted successfully'})
 
+    except json.JSONDecodeError:
+        return api_response(success=False, error='Invalid JSON format', status=400)
     except Exception as e:
         return api_response(success=False, error='An error occurred while submitting the answer', details=str(e), status=500)
+
 
 @csrf_exempt
 @require_GET
@@ -370,21 +379,29 @@ def mark_for_review(request):
         if not user:
             return JsonResponse({'error': 'Invalid token'}, status=403)
 
-        form = MarkForReviewForm(json.loads(request.body))
-        if not form.is_valid():
-            return api_response(success=False, error='Invalid data', status=400)
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return api_response(success=False, error='Invalid JSON format', status=400)
 
+        form = MarkForReviewForm(data)
+        if not form.is_valid():
+            return api_response(success=False, error='Invalid data', details=form.errors, status=400)
+        
         session_id = form.cleaned_data['session_id']
         question_no = form.cleaned_data['question_no']
         mark = form.cleaned_data['mark']
 
-        session = get_object_or_404(ProctoringSession.objects.only('id', 'exam'), id=session_id,  user=user)
+        session = get_object_or_404(ProctoringSession.objects.only('id', 'exam'), id=session_id, user=user)
         question = get_object_or_404(Question.objects.only('id', 'status'), exam=session.exam, question_no=question_no)
 
         new_status = 'Mark for Review' if mark else 'Not Answered'
-        if question.status != new_status:
-            question.status = new_status
-            question.save(update_fields=['status'])
+
+        if question.status == new_status:
+            return api_response(success=True, data={'status': f'Already marked as {new_status.lower()}'})
+
+        question.status = new_status
+        question.save(update_fields=['status'])
 
         message = 'Question marked for review' if mark else 'Mark for review removed'
         return api_response(success=True, data={'status': message})
@@ -437,66 +454,62 @@ class StatusTypeChoicesAPIView(APIView):
 
 @csrf_exempt
 def get_details(request):
-    if request.method == 'POST':
-        try:
-            auth_header = request.headers.get('Authorization', '')
-            token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
-
-            if not token:
-                return JsonResponse({'error': 'Token is required'}, status=400)
-
-            user = new_user.objects.filter(token=token).first()
-            if not user:
-                return JsonResponse({'error': 'Invalid token'}, status=403)
-
-            data = json.loads(request.body)
-            session_id = data.get('session_id')
-            email = data.get('email', '')
-
-            if not session_id:
-                return JsonResponse({'error': 'Session ID is required'}, status=400)
-
-            if not email:
-                return JsonResponse({'error': 'Email is required'}, status=400)
-
-            if user.email.lower() != email.lower():
-                return JsonResponse({'error': 'Email does not match'}, status=403)
-
-            session = get_object_or_404(ProctoringSession, id=session_id, user=user)
-            exam = session.exam
-
-            user_score = UserScore.objects.filter(user=user, exam=exam).first()
-            if user_score:
-                user_score.refresh_from_db()
-            score = user_score.score if user_score else 0
-
-            print(f"Fetched Updated Score for User {user.id}, Exam {exam.id}: {score}")
-
-            answered_questions = exam.questions.filter(status="Answered").count()
-            not_answered_questions = exam.questions.filter(status="Not Answered").count()
-            not_visited_questions = exam.questions.filter(status="Not Visited").count()
-            marked_for_review = exam.questions.filter(status="Mark for Review").count()
-
-            details = {
-                'Name': data.get('name', ''),
-                'Phone': data.get('mobile_no', ''),
-                'Email': user.email,
-                'Score': score,
-                'answered_questions': answered_questions,
-                'not_answered_questions': not_answered_questions,
-                'marked_for_review': marked_for_review,
-                'not_visited_questions': not_visited_questions,
-            }
-
-            return JsonResponse({'Quiz Summary': details}, status=200)
-
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': 'An error occurred', 'details': str(e)}, status=500)
-    else:
+    if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
+
+        if not token:
+            return JsonResponse({'error': 'Token is required'}, status=400)
+
+        user = new_user.objects.filter(token=token).first()
+        if not user:
+            return JsonResponse({'error': 'Invalid token'}, status=403)
+
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        email = data.get('email', '').strip().lower()
+
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+
+        if not email:
+            return JsonResponse({'error': 'Email is required'}, status=400)
+
+        if user.email.lower() != email:
+            return JsonResponse({'error': 'Email does not match'}, status=403)
+
+        session = get_object_or_404(ProctoringSession, id=session_id, user=user)
+        exam = session.exam
+
+        user_score = UserScore.objects.filter(user=user, exam=exam).only('score').first()
+        score = user_score.score if user_score else 0
+
+        question_status_counts = exam.questions.values('status').annotate(count=Count('status'))
+        status_mapping = {'Answered': 0, 'Not Answered': 0, 'Not Visited': 0, 'Mark for Review': 0}
+
+        for entry in question_status_counts:
+            status_mapping[entry['status']] = entry['count']
+
+        details = {
+            'Name': data.get('name', ''),
+            'Phone': data.get('mobile_no', ''),
+            'Email': user.email,
+            'Score': score,
+            'answered_questions': status_mapping['Answered'],
+            'not_answered_questions': status_mapping['Not Answered'],
+            'marked_for_review': status_mapping['Mark for Review'],
+            'not_visited_questions': status_mapping['Not Visited'],
+        }
+
+        return JsonResponse({'Quiz Summary': details}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': 'An error occurred', 'details': str(e)}, status=500)
 
 @csrf_exempt
 @require_POST
@@ -513,56 +526,68 @@ def submit_all_answers(request):
             return JsonResponse({'error': 'Invalid token'}, status=403)
 
         form = SubmitAllAnswersForm(json.loads(request.body))
-        if form.is_valid():
-            session_id = form.cleaned_data['session_id']
-            answers = form.cleaned_data['answers']
-
-            session = get_object_or_404(ProctoringSession, id=session_id, user=user)
-
-            if session.is_submitted:
-                return JsonResponse({'error': 'Answers have already been submitted'}, status=400)
-
-            user_score, _ = UserScore.objects.get_or_create(user=user, exam=session.exam)
-
-            question_map = {q.question_no: q for q in session.exam.questions.all()}
-            current_time = timezone.now()
-            initial_score = user_score.score
-
-            for answer in answers:
-                question_no = answer['question_no']
-                selected_option = answer['selected_option']
-                question = question_map.get(question_no)
-
-                if question:
-                    response, created = UserResponse.objects.get_or_create(
-                        user=user,
-                        question=question,
-                        session=session,
-                        defaults={'selected_option': selected_option, 'response_time': current_time}
-                    )
-
-                    if not created and response.selected_option == question.correct_option and selected_option != question.correct_option:
-                        user_score.score = max(user_score.score - 1, 0)
-
-                    if selected_option == question.correct_option and (created or response.selected_option != selected_option):
-                        user_score.score += 1
-
-                    response.selected_option = selected_option
-                    response.response_time = current_time
-                    response.save()
-
-                    question.status = 'Answered'
-                    question.save()
-
-            if user_score.score != initial_score:
-                user_score.save(update_fields=['score'])
-
-            session.is_submitted = True
-            session.save(update_fields=['is_submitted'])
-
-            return JsonResponse({'success': True, 'message': 'Answers submitted successfully'}, status=200)
-        else:
+        if not form.is_valid():
             return JsonResponse({'success': False, 'error': 'Invalid data', 'details': form.errors}, status=400)
+
+        session_id = form.cleaned_data['session_id']
+        answers = form.cleaned_data['answers']
+
+        session = get_object_or_404(ProctoringSession, id=session_id, user=user)
+
+        if session.is_submitted:
+            return JsonResponse({'error': 'Answers have already been submitted'}, status=400)
+
+        user_score, _ = UserScore.objects.get_or_create(user=user, exam=session.exam)
+        question_map = {q.question_no: q for q in session.exam.questions.only('id', 'question_no', 'correct_option')}
+        current_time = timezone.now()
+        score_change = 0
+        response_updates = []
+        answered_questions = []
+
+        for answer in answers:
+            question_no = answer['question_no']
+            selected_option = answer['selected_option']
+            question = question_map.get(question_no)
+
+            if not question:
+                continue 
+
+            response = UserResponse.objects.filter(user=user, question=question, session=session).first()
+            if response:
+                if response.selected_option != question.correct_option and selected_option == question.correct_option:
+                    score_change += 1
+                elif response.selected_option == question.correct_option and selected_option != question.correct_option:
+                    score_change -= 1
+
+                response.selected_option = selected_option
+                response.response_time = current_time
+                response_updates.append(response)
+            else:
+                UserResponse.objects.create(
+                    user=user,
+                    question=question,
+                    session=session,
+                    selected_option=selected_option,
+                    response_time=current_time
+                )
+                if selected_option == question.correct_option:
+                    score_change += 1
+
+            answered_questions.append(question.id)
+
+        if response_updates:
+            UserResponse.objects.bulk_update(response_updates, ['selected_option', 'response_time'])
+
+        if score_change:
+            user_score.score += score_change
+            user_score.save(update_fields=['score'])
+
+        Question.objects.filter(id__in=answered_questions).update(status='Answered')
+
+        session.is_submitted = True
+        session.save(update_fields=['is_submitted'])
+
+        return JsonResponse({'success': True, 'message': 'Answers submitted successfully'}, status=200)
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': 'An error occurred while submitting all answers', 'details': str(e)}, status=500)

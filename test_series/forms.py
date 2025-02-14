@@ -24,7 +24,7 @@ class SubmitAnswerForm(forms.Form):
 class MarkForReviewForm(forms.Form):
     session_id = forms.IntegerField()
     question_no = forms.IntegerField()
-    mark = forms.BooleanField()
+    mark = forms.BooleanField(required=True)
 
 class SubmitAllAnswersForm(forms.Form):
     session_id = forms.IntegerField()
