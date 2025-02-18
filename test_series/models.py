@@ -21,7 +21,7 @@ class ProctoringSession(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='ongoing')
 
 class ProctoringEvent(models.Model):
-    user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
+    # user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
     session = models.ForeignKey(ProctoringSession, on_delete=models.CASCADE)
     event_type = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -44,9 +44,9 @@ class Question(models.Model):
 class UserResponse(models.Model):
     user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    response = models.TextField()
+    # response = models.TextField()
     start_time = models.DateTimeField(default=timezone.now)
-    end_time = models.DateTimeField(null=True, blank=True)
+    # end_time = models.DateTimeField(null=True, blank=True)
     session = models.ForeignKey(ProctoringSession, on_delete=models.CASCADE)
     marked_for_review = models.BooleanField(default=False)
     selected_option = models.CharField(max_length=255,default='option1')
@@ -59,7 +59,7 @@ class UserScore(models.Model):
     score = models.IntegerField(default=0)
 
 class ExamParticipant(models.Model):
-    user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
+    # user = models.ForeignKey(new_user, on_delete=models.CASCADE,null=True, blank=True)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15)
