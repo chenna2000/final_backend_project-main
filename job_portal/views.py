@@ -1938,7 +1938,7 @@ def college_status_counts(request, university_in_charge_id):
         )
 
         enquiries_by_month = (
-            CollegeEnquiry.objects.filter(university_in_charge=university_in_charge)
+            new_user_enquiry.objects.filter(collegeName=formatted_college_name) 
             .annotate(month=TruncMonth('created_at'))
             .values('month')
             .annotate(count=Count('id'))
@@ -5222,6 +5222,63 @@ def change_college_job_status(request, university_incharge_id, job_id):
 
 
 ## new
+# @csrf_exempt
+# def submit_enquiry(request, id, collegeName):
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+#     try:
+#         data = json.loads(request.body)
+#         print(data)
+#         print("College ID =>> ", id)
+#         print("College Name =>> ", collegeName)
+        
+#         formatted_college_name = re.sub(r'[^a-zA-Z0-9]', '', collegeName).lower()
+#         print("formatted_college_name =>> ",formatted_college_name )
+
+#         formatted_college_name1 = formatted_college_name[:30]
+#         print("formatted_college_name upto 30 character =>> ",formatted_college_name1 )
+        
+#         university_incharge = UniversityInCharge.objects.filter(trimmed_university_name=formatted_college_name1).first()
+
+#         required_fields = ["firstname", "lastname", "email", "country_code", "mobile_number", "course"]
+#         missing_fields = [field for field in required_fields if not data.get(field)]
+#         if missing_fields:
+#             return JsonResponse({'error': 'All fields are required', 'missing_fields': missing_fields}, status=400)
+
+#         email = data['email']
+#         user = new_user.objects.filter(email=email).first()
+
+#         if new_user_enquiry.objects.filter(clg_id=id, email=email).exists():
+#             return JsonResponse({'error': 'An enquiry has already been submitted for this college with this email.'}, status=400)
+
+#         enquiry = new_user_enquiry.objects.create(
+#             first_name=data['firstname'],
+#             last_name=data['lastname'],
+#             email=email,
+#             country_code=data['country_code'],
+#             mobile_number=data['mobile_number'],
+#             course=data['course'],
+#             clg_id=id,
+#             collegeName = formatted_college_name1,
+#             new_user=user,
+#             university_in_charge=university_incharge
+#         )
+
+#         return JsonResponse({
+#             'message': 'Enquiry submitted successfully',
+#             'enquiry_id': enquiry.id
+#         }, status=201)
+
+#     except json.JSONDecodeError:
+#         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+#     except IntegrityError:
+#         return JsonResponse({'error': 'Error while saving data. Please try again.'}, status=500)
+#     except Exception as e:
+#         return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+
 @csrf_exempt
 def submit_enquiry(request, id, collegeName):
     if request.method != 'POST':
@@ -5229,18 +5286,21 @@ def submit_enquiry(request, id, collegeName):
 
     try:
         data = json.loads(request.body)
-        print(data)
-        print("College ID =>> ", id)
         print("College Name =>> ", collegeName)
-        
+
+        short_clg_name = " ".join(collegeName.split()[:2]) if len(collegeName.split()) > 1 else collegeName
+        print("Short College Name =>> ", short_clg_name)
+
         formatted_college_name = re.sub(r'[^a-zA-Z0-9]', '', collegeName).lower()
-        print("formatted_college_name =>> ",formatted_college_name )
-
         formatted_college_name1 = formatted_college_name[:30]
-        print("formatted_college_name upto 30 character =>> ",formatted_college_name1 )
-        
-        university_incharge = UniversityInCharge.objects.filter(trimmed_university_name=formatted_college_name1).first()
 
+        if short_clg_name.startswith(('IIT', 'IIIT', 'NIT', 'IIM')):
+            university_incharge = UniversityInCharge.objects.filter(trimmed_university_name=short_clg_name).first()
+            final_college_name = short_clg_name 
+        else:
+            university_incharge = UniversityInCharge.objects.filter(trimmed_university_name=formatted_college_name1).first()
+            final_college_name = formatted_college_name1
+        
         required_fields = ["firstname", "lastname", "email", "country_code", "mobile_number", "course"]
         missing_fields = [field for field in required_fields if not data.get(field)]
         if missing_fields:
@@ -5260,7 +5320,7 @@ def submit_enquiry(request, id, collegeName):
             mobile_number=data['mobile_number'],
             course=data['course'],
             clg_id=id,
-            collegeName = formatted_college_name1,
+            collegeName=final_college_name,
             new_user=user,
             university_in_charge=university_incharge
         )
@@ -5276,7 +5336,6 @@ def submit_enquiry(request, id, collegeName):
         return JsonResponse({'error': 'Error while saving data. Please try again.'}, status=500)
     except Exception as e:
         return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
-
 
 
 

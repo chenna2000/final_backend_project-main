@@ -501,6 +501,56 @@ class RegisterCompanyInChargeView(View):
             errors = dict(form.errors.items())
             return JsonResponse({'success': False, 'errors': errors}, status=400)
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class RegisterUniversityInChargeView(View):
+#     def post(self, request):
+#         try:
+#             data = json.loads(request.body.decode('utf-8'))
+#         except json.JSONDecodeError:
+#             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+        
+#         university_name = data.get('university_name')
+#         formatted_university_name = re.sub(r'[^a-zA-Z0-9]', '', university_name).lower()
+#         formatted_university_name1 = formatted_university_name[:30]
+#         print(formatted_university_name1)
+
+#         form = UniversityInChargeForm(data)
+#         if form.is_valid():
+#             university = form.save(commit=False)
+#             university.password = make_password(university.password)
+#             university.trimmed_university_name = formatted_university_name1
+#             university.save()
+#             send_data_to_google_sheet3(
+#                 university.university_name,
+#                 university.official_email,
+#                 university.country_code,
+#                 university.mobile_number,
+#                 university.password,
+#                 university.linkedin_profile,
+#                 university.college_person_name,
+#                 university.agreed_to_terms,
+#                 "Sheet3"
+#             )
+#             sender_email = settings.EMAIL_HOST_USER
+#             recipient_email = [university.official_email]
+#             subject = 'Confirmation Mail'
+#             message = '''Dear User,
+
+#             Thank you for your registration.
+
+#             If you have any questions or need further assistance, please don't hesitate to contact our support team.
+
+#             Best regards,
+#             Collegecue
+#             Support Team
+#             '''
+#             email = EmailMessage(subject, message, sender_email, recipient_email)
+#             email.send()
+#             return JsonResponse({'success': True, 'message': 'Registration successful'})
+#         else:
+#             errors = dict(form.errors.items())
+#             return JsonResponse({'success': False, 'errors': errors}, status=400)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterUniversityInChargeView(View):
     def post(self, request):
@@ -509,17 +559,31 @@ class RegisterUniversityInChargeView(View):
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
         
-        university_name = data.get('university_name')
+        university_name = data.get('university_name', '')
+        location_name = university_name.split()[-1] if university_name else ''
+        print("Location =>>>", location_name)
+
         formatted_university_name = re.sub(r'[^a-zA-Z0-9]', '', university_name).lower()
         formatted_university_name1 = formatted_university_name[:30]
-        print(formatted_university_name1)
 
         form = UniversityInChargeForm(data)
         if form.is_valid():
             university = form.save(commit=False)
             university.password = make_password(university.password)
-            university.trimmed_university_name = formatted_university_name1
+
+            if formatted_university_name.startswith('indianinstituteoftechnology'):
+                university.trimmed_university_name = 'IIT ' + location_name
+            elif formatted_university_name.startswith('indianinstituteofinformationtechnology'):
+                university.trimmed_university_name = 'IIIT ' + location_name
+            elif formatted_university_name.startswith('nationalinstituteoftechnology'):
+                university.trimmed_university_name = 'NIT ' + location_name
+            elif formatted_university_name.startswith('indianinstitutesofmanagement'):
+                university.trimmed_university_name = 'IIM ' + location_name
+            else:
+                university.trimmed_university_name = formatted_university_name1
+
             university.save()
+
             send_data_to_google_sheet3(
                 university.university_name,
                 university.official_email,
@@ -531,6 +595,7 @@ class RegisterUniversityInChargeView(View):
                 university.agreed_to_terms,
                 "Sheet3"
             )
+
             sender_email = settings.EMAIL_HOST_USER
             recipient_email = [university.official_email]
             subject = 'Confirmation Mail'
@@ -546,7 +611,9 @@ class RegisterUniversityInChargeView(View):
             '''
             email = EmailMessage(subject, message, sender_email, recipient_email)
             email.send()
+
             return JsonResponse({'success': True, 'message': 'Registration successful'})
+
         else:
             errors = dict(form.errors.items())
             return JsonResponse({'success': False, 'errors': errors}, status=400)

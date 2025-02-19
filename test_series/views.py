@@ -215,7 +215,7 @@ class RecordProctoringEventView(View):
 
             event = form.save(commit=False)
             event.session = session
-            event.user_id = user.id  # Store user_id in the database
+            event.user_id = user.id
             event.save()
 
             try:
