@@ -2315,3 +2315,23 @@ class ResetPasswordConsultantView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .forms import ContactForm
+
+@csrf_exempt
+def submit_contact_form(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body) 
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+        form = ContactForm(data)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"message": "Contact Form submitted successfully!"}, status=200)
+        return JsonResponse({"errors": form.errors}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
