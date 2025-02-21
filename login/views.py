@@ -10,7 +10,7 @@ from .models import CompanyInCharge, Consultant, JobSeeker, UniversityInCharge, 
 from django.contrib.auth.hashers import make_password, check_password # type: ignore
 from django.utils.decorators import method_decorator # type: ignore
 from django.views import View # type: ignore
-from .forms import ( JobSeekerRegistrationForm, UniversityInChargeForm,CompanyInChargeForm,ForgotForm,
+from .forms import ( ContactForm, JobSeekerRegistrationForm, UniversityInChargeForm,CompanyInChargeForm,ForgotForm,
 SubscriptionForm1,ConsultantForm,Forgot2Form
 ,VerifyForm,SubscriptionForm)
 from django.core.mail import EmailMessage # type: ignore
@@ -2314,11 +2314,6 @@ class ResetPasswordConsultantView(View):
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .forms import ContactForm
 
 @csrf_exempt
 def submit_contact_form(request):
