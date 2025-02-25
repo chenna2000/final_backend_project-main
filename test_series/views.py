@@ -812,3 +812,36 @@ def submit_details(request):
 
     except Exception as e:
         return api_response({'status': 'error', 'message': str(e)}, status=500)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .forms import Step1Form, Step2Form, Step3Form, Step4Form, Step5Form, Step6Form
+
+@csrf_exempt
+def submit_review(request):
+    if request.method == "POST":
+        form = Step1Form(request.POST)
+        form2 = Step2Form(request.POST)
+        form3 = Step3Form(request.POST)
+        form4 = Step4Form(request.POST)
+        form5 = Step5Form(request.POST, request.FILES)
+        form6 = Step6Form(request.POST, request.FILES)
+
+        if all([form.is_valid(), form2.is_valid(), form3.is_valid(), form4.is_valid(), form5.is_valid(), form6.is_valid()]):
+            review = form.save(commit=False)
+            review.admission_process = form2.cleaned_data.get("admission_process")
+            review.course_curriculum_faculty = form2.cleaned_data.get("course_curriculum_faculty")
+            review.fees_structure_scholarship = form3.cleaned_data.get("fees_structure_scholarship")
+            review.liked_things = form4.cleaned_data.get("liked_things")
+            review.disliked_things = form4.cleaned_data.get("disliked_things")
+            review.profile_photo = form5.cleaned_data.get("profile_photo")
+            review.campus_photos = form5.cleaned_data.get("campus_photos")
+            review.agree_terms = form5.cleaned_data.get("agree_terms")
+            review.certificate_id_card = form6.cleaned_data.get("certificate_id_card")
+            review.save()
+
+            return JsonResponse({"message": "Review submitted successfully"}, status=201)
+
+        return JsonResponse({"errors": {
+            **form.errors, **form2.errors, **form3.errors, **form4.errors, **form5.errors, **form6.errors
+        }}, status=400)

@@ -19,4 +19,5 @@ urlpatterns = [
     path('question/next/<int:session_id>/<int:current_question_no>/', views.get_next_question, name='get_next_question'),
     path('question/previous/<int:session_id>/<int:current_question_no>/', views.get_previous_question, name='get_previous_question'),
     path('submit-details/', views.submit_details, name='submit_details'),
+    path("submit-review", views.submit_review, name="submit_review"),
 ]

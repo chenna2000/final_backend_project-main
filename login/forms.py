@@ -1,5 +1,5 @@
 from django import forms # type: ignore
-from .models import JobSeeker, Subscriber1,Consultant,Forgot2,UniversityInCharge,Subscriber,Verify,Forgot,CompanyInCharge
+from .models import  AdmissionReview1, Contact, JobSeeker, Question, Subscriber1,Consultant,Forgot2,UniversityInCharge,Subscriber,Verify,Forgot,CompanyInCharge
 
 class CompanyInChargeForm(forms.ModelForm):
     class Meta:
@@ -78,11 +78,97 @@ def clean_email(self):
          raise forms.ValidationError("Email already in use.")
         return email
 
-from django import forms
-from .models import Contact
-
 class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
         fields = ['name', 'email', 'subject', 'website', 'message']
+
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ['text']
+
+
+# class Step1Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = [
+#             "college_name", "other_college_name", "course_name", "other_course_name",
+#             "student_name", "email", "phone_number", "gender",
+#             "linkedin_profile", "course_fees", "year", "referral_code",
+#             "anvil_reservation_benefits", "gd_pi_admission", "class_size",
+#             "opted_hostel", "college_provides_placements", "hostel_fees", "average_package"
+#         ]
+
+# class Step2Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = ["admission_process", "course_curriculum_faculty"]
+
+# class Step3Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = ["fees_structure_scholarship"]
+
+# class Step4Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = ["liked_things", "disliked_things"]
+
+# class Step5Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = ["profile_photo_url", "campus_photos_url", "agree_terms"]
+
+# class Step6Form(forms.ModelForm):
+#     class Meta:
+#         model = AdmissionReview
+#         fields = ["certificate_id_card_url"]
+
+
+from django import forms
+from .models import AdmissionReview1
+
+class Step1Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = [
+            "college_name", "other_college_name", "course_name", "other_course_name",
+            "student_name", "email", "country_code", "phone_number", "gender",
+            "linkedin_profile", "course_fees", "year", "referral_code","apply",
+            "anvil_reservation_benefits", "benefit", "gd_pi_admission", "class_size",
+            "opted_hostel", "college_provides_placements", "hostel_fees", "average_package"
+        ]
+
+class Step2Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = ["admission_process", "course_curriculum_faculty"]
+
+class Step3Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = ["fees_structure_scholarship"]
+
+class Step4Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = ["liked_things", "disliked_things"]
+
+class Step5Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = ["profile_photo", "campus_photos", "agree_terms"]
+    
+    # Handling file upload fields
+    profile_photo = forms.FileField(required=False)
+    campus_photos = forms.FileField(required=False)
+
+class Step6Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview1
+        fields = ["certificate_id_card"]
+
+    certificate_id_card = forms.FileField(required=False)
+
 

@@ -35,3 +35,46 @@ class ExamParticipantForm(forms.ModelForm):
         model = ExamParticipant
         fields = ['name', 'email', 'phone_number']
 
+from django import forms
+from .models import AdmissionReview
+
+class Step1Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview
+        fields = [
+            "college_name", "other_college_name", "course_name", "other_course_name",
+            "student_name", "email", "phone_number", "gender",
+            "linkedin_profile", "course_fees", "year", "referral_code",
+            "anvil_reservation_benefits", "gd_pi_admission", "class_size",
+            "opted_hostel", "college_provides_placements", "hostel_fees", "average_package"
+        ]
+
+class Step2Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview
+        fields = ["admission_process", "course_curriculum_faculty"]
+
+class Step3Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview
+        fields = ["fees_structure_scholarship"]
+
+class Step4Form(forms.ModelForm):
+    class Meta:
+        model = AdmissionReview
+        fields = ["liked_things", "disliked_things"]
+
+class Step5Form(forms.ModelForm):
+    profile_photo = forms.ImageField(required=False)
+    campus_photos = forms.ImageField(required=False)
+
+    class Meta:
+        model = AdmissionReview
+        fields = ["profile_photo", "campus_photos", "agree_terms"]
+
+class Step6Form(forms.ModelForm):
+    certificate_id_card = forms.FileField(required=False)
+
+    class Meta:
+        model = AdmissionReview
+        fields = ["certificate_id_card"]
