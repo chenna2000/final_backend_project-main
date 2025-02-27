@@ -159,41 +159,12 @@ class Contact(models.Model):
 
 class Question(models.Model):
     text = models.TextField()
+    answer = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.text[:50] 
-
-# class AdmissionReview(models.Model):
-#     college_name = models.CharField(max_length=255)
-#     other_college_name = models.CharField(max_length=255, blank=True, null=True)
-#     course_name = models.CharField(max_length=255)
-#     other_course_name = models.CharField(max_length=255, blank=True, null=True)
-#     student_name = models.CharField(max_length=255)
-#     email = models.EmailField()
-#     phone_number = models.CharField(max_length=20)
-#     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
-#     linkedin_profile = models.URLField(blank=True, null=True)
-#     course_fees = models.DecimalField(max_digits=10, decimal_places=2)
-#     year = models.IntegerField()
-#     referral_code = models.CharField(max_length=50, blank=True, null=True)
-#     anvil_reservation_benefits = models.BooleanField()
-#     gd_pi_admission = models.BooleanField()
-#     class_size = models.IntegerField()
-#     opted_hostel = models.BooleanField()
-#     college_provides_placements = models.BooleanField()
-#     hostel_fees = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-#     average_package = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-#     admission_process = models.TextField()
-#     course_curriculum_faculty = models.TextField()
-#     fees_structure_scholarship = models.TextField()
-#     liked_things = models.TextField()
-#     disliked_things = models.TextField()
-#     profile_photo_url = models.URLField(blank=True, null=True)
-#     campus_photos_url = models.URLField(blank=True, null=True)
-#     agree_terms = models.BooleanField(default=True)
-#     certificate_id_card_url = models.URLField(blank=True, null=True)
-
+    
 class AdmissionReview1(models.Model):
     college_name = models.CharField(max_length=255)
     other_college_name = models.CharField(max_length=255, blank=True, null=True)
@@ -227,6 +198,8 @@ class AdmissionReview1(models.Model):
     profile_photo = models.FileField(upload_to='uploads/profile_photos/', blank=True, null=True)
     campus_photos = models.FileField(upload_to='uploads/campus_photos/', blank=True, null=True)
     certificate_id_card = models.FileField(upload_to='uploads/certificates/', blank=True, null=True)
+    graduation_certificate = models.FileField(upload_to='uploads/graduation_certificates/', blank=True, null=True)
+
 
     agree_terms = models.BooleanField(default=True)
 
