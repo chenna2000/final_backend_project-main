@@ -2371,37 +2371,122 @@ def submit_answer(request, question_id):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
+# @csrf_exempt
+# def submit_admission_review(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "Invalid request method"}, status=405)
+    
+#     try:
+#         data = request.POST.dict()
+#         files = request.FILES
+        
+#         step1_form = Step1Form(data)
+#         if not step1_form.is_valid():
+#             return JsonResponse({"errors": step1_form.errors}, status=400)
+        
+#         admission_review = step1_form.save(commit=False)
+#         forms = [Step2Form, Step3Form, Step4Form, Step5Form, Step6Form]
+        
+#         for form_class in forms:
+#             form = form_class(data, files if form_class in [Step5Form, Step6Form] else None, instance=admission_review)
+#             if form.is_valid():
+#                 form.save(commit=False)
+        
+#         admission_review.save()
+        
+#         response_data = {
+#             "message": "Admission review submitted successfully.",
+#             "step1": {field: getattr(admission_review, field) for field in [
+#                 "college_name", "other_college_name", "course_name", "other_course_name", "student_name", "email",
+#                 "country_code", "phone_number", "gender", "linkedin_profile", "course_fees", "year", "referral_code",
+#                 "apply", "anvil_reservation_benefits", "benefit", "gd_pi_admission", "class_size", "opted_hostel",
+#                 "college_provides_placements", "hostel_fees", "average_package"
+#             ]},
+#             "step2": {
+#                 "admission_process": admission_review.admission_process,
+#                 "course_curriculum_faculty": admission_review.course_curriculum_faculty
+#             },
+#             "step3": {"fees_structure_scholarship": admission_review.fees_structure_scholarship},
+#             "step4": {
+#                 "liked_things": admission_review.liked_things,
+#                 "disliked_things": admission_review.disliked_things
+#             },
+#             "step5": {
+#                 "profile_photo": admission_review.profile_photo.url if admission_review.profile_photo else None,
+#                 "campus_photos": admission_review.campus_photos.url if admission_review.campus_photos else None,
+#                 "agree_terms": admission_review.agree_terms
+#             },
+#             "step6": {
+#                 "certificate_id_card": admission_review.certificate_id_card.url if admission_review.certificate_id_card else None,
+#                 "graduation_certificate": admission_review.graduation_certificate.url if admission_review.graduation_certificate else None
+#             }
+#         }
+        
+#         return JsonResponse(response_data, status=201)
+    
+#     except json.JSONDecodeError:
+#         return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+
 @csrf_exempt
 def submit_admission_review(request):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
-    
+
     try:
         data = request.POST.dict()
         files = request.FILES
-        
+
         step1_form = Step1Form(data)
         if not step1_form.is_valid():
             return JsonResponse({"errors": step1_form.errors}, status=400)
-        
+
         admission_review = step1_form.save(commit=False)
+
+        # Only include dependent fields if their BooleanField is True
+        if not admission_review.anvil_reservation_benefits:
+            admission_review.benefit = None
+        if not admission_review.gd_pi_admission:
+            admission_review.class_size = None
+        if not admission_review.opted_hostel:
+            admission_review.hostel_fees = None
+        if not admission_review.college_provides_placements:
+            admission_review.average_package = None
+
         forms = [Step2Form, Step3Form, Step4Form, Step5Form, Step6Form]
-        
         for form_class in forms:
             form = form_class(data, files if form_class in [Step5Form, Step6Form] else None, instance=admission_review)
             if form.is_valid():
                 form.save(commit=False)
-        
+
         admission_review.save()
-        
+
         response_data = {
             "message": "Admission review submitted successfully.",
-            "step1": {field: getattr(admission_review, field) for field in [
-                "college_name", "other_college_name", "course_name", "other_course_name", "student_name", "email",
-                "country_code", "phone_number", "gender", "linkedin_profile", "course_fees", "year", "referral_code",
-                "apply", "anvil_reservation_benefits", "benefit", "gd_pi_admission", "class_size", "opted_hostel",
-                "college_provides_placements", "hostel_fees", "average_package"
-            ]},
+            "step1": {
+                "college_name": admission_review.college_name,
+                "other_college_name": admission_review.other_college_name,
+                "course_name": admission_review.course_name,
+                "other_course_name": admission_review.other_course_name,
+                "student_name": admission_review.student_name,
+                "email": admission_review.email,
+                "country_code": admission_review.country_code,
+                "phone_number": admission_review.phone_number,
+                "gender": admission_review.gender,
+                "linkedin_profile": admission_review.linkedin_profile,
+                "course_fees": admission_review.course_fees,
+                "year": admission_review.year,
+                "referral_code": admission_review.referral_code,
+                "apply": admission_review.apply,
+                "anvil_reservation_benefits": admission_review.anvil_reservation_benefits,
+                "benefit": admission_review.benefit,
+                "gd_pi_admission": admission_review.gd_pi_admission,
+                "class_size": admission_review.class_size,
+                "opted_hostel": admission_review.opted_hostel,
+                "college_provides_placements": admission_review.college_provides_placements,
+                "hostel_fees": admission_review.hostel_fees,
+                "average_package": admission_review.average_package,
+            },
             "step2": {
                 "admission_process": admission_review.admission_process,
                 "course_curriculum_faculty": admission_review.course_curriculum_faculty
@@ -2418,12 +2503,12 @@ def submit_admission_review(request):
             },
             "step6": {
                 "certificate_id_card": admission_review.certificate_id_card.url if admission_review.certificate_id_card else None,
-                "graduation_certificate": admission_review.graduation_certificate.url if admission_review.graduation_certificate else None
+				"graduation_certificate": admission_review.graduation_certificate.url if admission_review.graduation_certificate else None
             }
         }
-        
+
         return JsonResponse(response_data, status=201)
-    
+
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format"}, status=400)
 

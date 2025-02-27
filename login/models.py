@@ -174,7 +174,7 @@ class AdmissionReview1(models.Model):
     email = models.EmailField()
     country_code=models.CharField(max_length=5,default='IN')
     phone_number = models.CharField(max_length=20)
-    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+    gender = models.CharField(max_length=10)
     linkedin_profile = models.URLField(blank=True, null=True)
     course_fees = models.DecimalField(max_digits=10, decimal_places=2)
     year = models.IntegerField()
@@ -193,13 +193,22 @@ class AdmissionReview1(models.Model):
     fees_structure_scholarship = models.TextField()
     liked_things = models.TextField()
     disliked_things = models.TextField()
-
-    # File fields instead of URL fields
     profile_photo = models.FileField(upload_to='uploads/profile_photos/', blank=True, null=True)
     campus_photos = models.FileField(upload_to='uploads/campus_photos/', blank=True, null=True)
     certificate_id_card = models.FileField(upload_to='uploads/certificates/', blank=True, null=True)
     graduation_certificate = models.FileField(upload_to='uploads/graduation_certificates/', blank=True, null=True)
-
-
     agree_terms = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        """ Only store dependent fields if their respective BooleanField is True """
+        if not self.anvil_reservation_benefits:
+            self.benefit = None
+        if not self.gd_pi_admission:
+            self.class_size = None
+        if not self.opted_hostel:
+            self.hostel_fees = None
+        if not self.college_provides_placements:
+            self.average_package = None
+        super().save(*args, **kwargs)
+
 
