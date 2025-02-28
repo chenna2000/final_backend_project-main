@@ -348,36 +348,6 @@ class Forgot2_view(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class StudentLogoutView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization', '')
-#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
-
-#             if not token:
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to logout'}, status=400)
-
-#             student_user = new_user.objects.filter(token=token).first()
-#             if not student_user:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             student_user.token = None
-#             student_user.save()
-
-#             return JsonResponse({'success': True, 'message': 'Student logout successful'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class StudentLogoutView(View):
     def post(self, request):
@@ -404,29 +374,6 @@ class StudentLogoutView(View):
             return JsonResponse({'error': 'Invalid JSON or token', 'details': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class DeleteUserAccountView(View):
-#     def post(self, request):
-#         try:
-#             token = request.headers.get('Authorization', '').split(' ')[1]
-#             data = json.loads(request.body.decode('utf-8'))
-
-#             if not token or not data.get('confirmation'):
-#                 return JsonResponse({'error': 'Token or confirmation missing'}, status=400)
-
-#             user= new_user.objects.filter(token=token).first()
-#             if not user:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             user.delete()
-#             return JsonResponse({'success': True, 'message': 'Account deleted successfully'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or missing token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteUserAccountView(View):
@@ -500,56 +447,6 @@ class RegisterCompanyInChargeView(View):
         else:
             errors = dict(form.errors.items())
             return JsonResponse({'success': False, 'errors': errors}, status=400)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class RegisterUniversityInChargeView(View):
-#     def post(self, request):
-#         try:
-#             data = json.loads(request.body.decode('utf-8'))
-#         except json.JSONDecodeError:
-#             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
-        
-#         university_name = data.get('university_name')
-#         formatted_university_name = re.sub(r'[^a-zA-Z0-9]', '', university_name).lower()
-#         formatted_university_name1 = formatted_university_name[:30]
-#         print(formatted_university_name1)
-
-#         form = UniversityInChargeForm(data)
-#         if form.is_valid():
-#             university = form.save(commit=False)
-#             university.password = make_password(university.password)
-#             university.trimmed_university_name = formatted_university_name1
-#             university.save()
-#             send_data_to_google_sheet3(
-#                 university.university_name,
-#                 university.official_email,
-#                 university.country_code,
-#                 university.mobile_number,
-#                 university.password,
-#                 university.linkedin_profile,
-#                 university.college_person_name,
-#                 university.agreed_to_terms,
-#                 "Sheet3"
-#             )
-#             sender_email = settings.EMAIL_HOST_USER
-#             recipient_email = [university.official_email]
-#             subject = 'Confirmation Mail'
-#             message = '''Dear User,
-
-#             Thank you for your registration.
-
-#             If you have any questions or need further assistance, please don't hesitate to contact our support team.
-
-#             Best regards,
-#             Collegecue
-#             Support Team
-#             '''
-#             email = EmailMessage(subject, message, sender_email, recipient_email)
-#             email.send()
-#             return JsonResponse({'success': True, 'message': 'Registration successful'})
-#         else:
-#             errors = dict(form.errors.items())
-#             return JsonResponse({'success': False, 'errors': errors}, status=400)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterUniversityInChargeView(View):
@@ -923,74 +820,6 @@ class LoginConsultantView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-##def verify_token(request):
-##    try:
-##        token = request.POST.get('idtoken')    # Frontend provides this token
-##        if not token:
-##            return JsonResponse({'error': 'Token missing'}, status=400)
-##
-##        idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-##        if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
-##            return JsonResponse({'error': 'Wrong issuer.'}, status=400)
-##
-##        return JsonResponse({'email': idinfo.get('email')})
-##
-##    except ValueError as ve:
-##        return JsonResponse({'error': str(ve)}, status=400)
-##    except Exception as e:
-##        return JsonResponse({'error': str(e)}, status=500)
-##
-##def verify_linkedin_token(request):
-##    token = request.POST.get('idtoken')  # Frontend provides this token
-##    if not token:
-##        return JsonResponse({'error': 'Token missing'}, status=400)
-##
-##    try:
-##        verify_url = 'https://api.linkedin.com/v2/me'
-##        headers = {'Authorization': f'Bearer {token}'}
-##
-##        response = requests.get(verify_url, headers=headers, timeout=9000)
-##
-##        if response.status_code == 200:
-##            user_info = response.json()
-##            return JsonResponse({
-##                'id': user_info.get('id'),
-##                'email': user_info.get('emailAddress')
-##            })
-##
-##        return JsonResponse({'error': 'Invalid token'}, status=400)
-##
-##    except Exception as e:
-##        return JsonResponse({'error': str(e)}, status=500)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class LogoutCompanyInChargeView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization', '')
-#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
-
-#             if not token:
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to logout'}, status=400)
-
-#             company = CompanyInCharge.objects.filter(token=token).first()
-#             if not company:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             company.token = None
-#             company.save()
-
-#             return JsonResponse({'success': True, 'message': 'Logout successful'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutCompanyInChargeView(View):
     def post(self, request):
@@ -1017,35 +846,6 @@ class LogoutCompanyInChargeView(View):
             return JsonResponse({'error': 'Invalid JSON or token', 'details': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class LogoutUniversityView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization', '')
-#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
-
-#             if not token:
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to logout'}, status=400)
-
-#             university = UniversityInCharge.objects.filter(token=token).first()
-#             if not university:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             university.token = None
-#             university.save()
-
-#             return JsonResponse({'success': True, 'message': 'Logout successful'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LogoutUniversityView(View):
@@ -1140,35 +940,6 @@ class LoginJobSeekerView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class JobSeekerLogoutView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization', '')
-#             token = auth_header.split(' ')[1] if auth_header.startswith('Bearer ') else None
-
-#             if not token:
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to logout'}, status=400)
-
-#             job_seeker = JobSeeker.objects.filter(token=token).first()
-#             if not job_seeker:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             job_seeker.token = None
-#             job_seeker.save()
-
-#             return JsonResponse({'success': True, 'message': 'Logout successful'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class JobSeekerLogoutView(View):
     def post(self, request):
@@ -1191,123 +962,6 @@ class JobSeekerLogoutView(View):
             return JsonResponse({'error': 'Invalid JSON or token'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class ChangePasswordJobSeekerView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization')
-#             if not auth_header or not auth_header.startswith('Bearer '):
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             token = auth_header.split(' ')[1]
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             new_password = data.get('new_password')
-#             confirm_password = data.get('confirm_password')
-#             official_email = data.get('official_email')
-#             old_password = data.get('old_password')
-
-#             if not all([official_email, old_password, new_password, confirm_password]):
-#                 return JsonResponse({'error': 'All fields are required'}, status=400)
-#             if new_password != confirm_password:
-#                 return JsonResponse({'error': 'Passwords do not match'}, status=400)
-
-#             job_seeker = JobSeeker.objects.filter(email=official_email, token=token).first()
-#             if not job_seeker:
-#                 return JsonResponse({'error': 'Job seeker not found or invalid token'}, status=404)
-
-#             if not check_password(old_password, job_seeker.password):
-#                 return JsonResponse({'error': 'Old password is incorrect'}, status=400)
-
-#             job_seeker.password = make_password(new_password)
-#             job_seeker.save()
-
-#             return JsonResponse({'success': True, 'message': 'Password has been changed successfully'}, status=200)
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class ChangePasswordCompanyInChargeView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization')
-#             if not auth_header or not auth_header.startswith('Bearer '):
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             token = auth_header.split(' ')[1]
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             new_password = data.get('new_password')
-#             confirm_password = data.get('confirm_password')
-#             if not new_password or not confirm_password:
-#                 return JsonResponse({'error': 'New password and confirmation are required'}, status=400)
-#             if new_password != confirm_password:
-#                 return JsonResponse({'error': 'Passwords do not match'}, status=400)
-
-#             official_email = data.get('official_email')
-#             if not official_email:
-#                 return JsonResponse({'error': 'Official email is required'}, status=400)
-
-#             company = CompanyInCharge.objects.filter(official_email=official_email, token=token).first()
-#             if not company:
-#                 return JsonResponse({'error': 'Company not found or invalid token'}, status=404)
-
-#             old_password = data.get('old_password')
-#             if not check_password(old_password, company.password):
-#                 return JsonResponse({'error': 'Old password is incorrect'}, status=400)
-
-#             company.password = make_password(new_password)
-#             company.save()
-
-#             return JsonResponse({'success': True, 'message': 'Password has been changed successfully'}, status=200)
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class ChangePasswordUniversityInChargeView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization')
-#             if not auth_header or not auth_header.startswith('Bearer '):
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             token = auth_header.split(' ')[1]
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             email = data.get('official_email')
-#             old_password = data.get('old_password')
-#             new_password = data.get('new_password')
-#             confirm_password = data.get('confirm_password')
-
-#             if not all([email, old_password, new_password, confirm_password]):
-#                 return JsonResponse({'error': 'All fields are required'}, status=400)
-#             if new_password != confirm_password:
-#                 return JsonResponse({'error': 'Passwords do not match'}, status=400)
-
-#             university = UniversityInCharge.objects.filter(official_email=email, token=token).first()
-#             if not university:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             if not check_password(old_password, university.password):
-#                 return JsonResponse({'error': 'Old password is incorrect'}, status=400)
-
-#             university.password = make_password(new_password)
-#             university.save()
-
-#             return JsonResponse({'success': True, 'message': 'Password changed successfully'}, status=200)
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
 
 ## updated account setting functionality code for 3 dashboards
 
@@ -1479,33 +1133,6 @@ class ChangePasswordConsultantView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-# @method_decorator(csrf_exempt, name='dispatch')
-# class DeleteCompanyInChargeAccountView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization')
-#             if not auth_header or not auth_header.startswith('Bearer '):
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             token = auth_header.split(' ')[1]
-
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to delete account'}, status=400)
-
-#             company = CompanyInCharge.objects.filter(token=token).first()
-#             if not company:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             company.delete()
-#             return JsonResponse({'success': True, 'message': 'Account deleted successfully'}, status=200)
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
-
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteCompanyInChargeAccountView(View):
     def post(self, request):
@@ -1534,31 +1161,6 @@ class DeleteCompanyInChargeAccountView(View):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-# @method_decorator(csrf_exempt, name='dispatch')
-# class DeleteJobSeekerAccountView(View):
-#     def post(self, request):
-#         try:
-#             auth_header = request.headers.get('Authorization')
-#             if not auth_header or not auth_header.startswith('Bearer '):
-#                 return JsonResponse({'error': 'Token is missing or invalid format'}, status=400)
-
-#             token = auth_header.split(' ')[1]
-#             data = json.loads(request.body.decode('utf-8'))
-#             if not data.get('confirmation', False):
-#                 return JsonResponse({'error': 'Confirmation is required to delete account'}, status=400)
-
-#             job_seeker = JobSeeker.objects.filter(token=token).first()
-#             if not job_seeker:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             job_seeker.delete()
-#             return JsonResponse({'success': True, 'message': 'Account deleted successfully'}, status=200)
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteJobSeekerAccountView(View):
     def post(self, request):
@@ -1586,28 +1188,6 @@ class DeleteJobSeekerAccountView(View):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-# @method_decorator(csrf_exempt, name='dispatch')
-# class DeleteUniversityAccountView(View):
-#     def post(self, request):
-#         try:
-#             token = request.headers.get('Authorization', '').split(' ')[1]
-#             data = json.loads(request.body.decode('utf-8'))
-
-#             if not token or not data.get('confirmation'):
-#                 return JsonResponse({'error': 'Token or confirmation missing'}, status=400)
-
-#             university = UniversityInCharge.objects.filter(token=token).first()
-#             if not university:
-#                 return JsonResponse({'error': 'Invalid token'}, status=404)
-
-#             university.delete()
-#             return JsonResponse({'success': True, 'message': 'Account deleted successfully'}, status=200)
-
-#         except (json.JSONDecodeError, IndexError):
-#             return JsonResponse({'error': 'Invalid JSON or missing token'}, status=400)
-#         except Exception as e:
-#             return JsonResponse({'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteUniversityAccountView(View):
@@ -2371,63 +1951,6 @@ def submit_answer(request, question_id):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
-# @csrf_exempt
-# def submit_admission_review(request):
-#     if request.method != "POST":
-#         return JsonResponse({"error": "Invalid request method"}, status=405)
-    
-#     try:
-#         data = request.POST.dict()
-#         files = request.FILES
-        
-#         step1_form = Step1Form(data)
-#         if not step1_form.is_valid():
-#             return JsonResponse({"errors": step1_form.errors}, status=400)
-        
-#         admission_review = step1_form.save(commit=False)
-#         forms = [Step2Form, Step3Form, Step4Form, Step5Form, Step6Form]
-        
-#         for form_class in forms:
-#             form = form_class(data, files if form_class in [Step5Form, Step6Form] else None, instance=admission_review)
-#             if form.is_valid():
-#                 form.save(commit=False)
-        
-#         admission_review.save()
-        
-#         response_data = {
-#             "message": "Admission review submitted successfully.",
-#             "step1": {field: getattr(admission_review, field) for field in [
-#                 "college_name", "other_college_name", "course_name", "other_course_name", "student_name", "email",
-#                 "country_code", "phone_number", "gender", "linkedin_profile", "course_fees", "year", "referral_code",
-#                 "apply", "anvil_reservation_benefits", "benefit", "gd_pi_admission", "class_size", "opted_hostel",
-#                 "college_provides_placements", "hostel_fees", "average_package"
-#             ]},
-#             "step2": {
-#                 "admission_process": admission_review.admission_process,
-#                 "course_curriculum_faculty": admission_review.course_curriculum_faculty
-#             },
-#             "step3": {"fees_structure_scholarship": admission_review.fees_structure_scholarship},
-#             "step4": {
-#                 "liked_things": admission_review.liked_things,
-#                 "disliked_things": admission_review.disliked_things
-#             },
-#             "step5": {
-#                 "profile_photo": admission_review.profile_photo.url if admission_review.profile_photo else None,
-#                 "campus_photos": admission_review.campus_photos.url if admission_review.campus_photos else None,
-#                 "agree_terms": admission_review.agree_terms
-#             },
-#             "step6": {
-#                 "certificate_id_card": admission_review.certificate_id_card.url if admission_review.certificate_id_card else None,
-#                 "graduation_certificate": admission_review.graduation_certificate.url if admission_review.graduation_certificate else None
-#             }
-#         }
-        
-#         return JsonResponse(response_data, status=201)
-    
-#     except json.JSONDecodeError:
-#         return JsonResponse({"error": "Invalid JSON format"}, status=400)
-
-
 @csrf_exempt
 def submit_admission_review(request):
     if request.method != "POST":
@@ -2443,7 +1966,6 @@ def submit_admission_review(request):
 
         admission_review = step1_form.save(commit=False)
 
-        # Only include dependent fields if their BooleanField is True
         if not admission_review.anvil_reservation_benefits:
             admission_review.benefit = None
         if not admission_review.gd_pi_admission:

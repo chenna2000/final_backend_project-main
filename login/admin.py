@@ -1,7 +1,7 @@
 from django.contrib import admin # type: ignore
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin # type: ignore
 from django.contrib.auth.forms import UserChangeForm # type: ignore
-from .models import CompanyInCharge,Consultant, JobSeeker,UniversityInCharge,CustomUser,OTP,new_user,Forgot,Forgot2,Verify,Subscriber,Subscriber1,Contact,Question
+from .models import CompanyInCharge,Consultant, JobSeeker,UniversityInCharge,CustomUser,OTP,new_user,Forgot,Forgot2,Verify,Subscriber,Subscriber1,Contact,Question,AdmissionReview1
 from .utils import is_superadmin
 
 class CustomUserChangeForm(UserChangeForm):
@@ -31,3 +31,4 @@ admin.site.register(Subscriber1)
 admin.site.register(JobSeeker)
 admin.site.register(Contact)
 admin.site.register(Question)
+admin.site.register(AdmissionReview1)
